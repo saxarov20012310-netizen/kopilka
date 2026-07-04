@@ -9,4 +9,15 @@ export default defineConfig({
     host: true,
     port: 5173,
   },
+  build: {
+    // Стабильные имена файлов (без хэша): закэшированный Telegram-ом index.html
+    // всегда ссылается на существующий бандл — не будет «белого экрана» после деплоя.
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
+    },
+  },
 })
