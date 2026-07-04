@@ -1,0 +1,8 @@
+# Конфиг для деплоя статики на Cloudflare (Workers Static Assets).
+# Раздаёт собранную папку dist; неизвестные пути отдают index.html (SPA).
+name = "kopilka"
+compatibility_date = "2024-11-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
