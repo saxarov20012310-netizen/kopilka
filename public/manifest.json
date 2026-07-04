@@ -1,0 +1,11 @@
+{
+  "name": "Копилка",
+  "short_name": "Копилка",
+  "description": "Telegram Mini App для накопления денег к цели",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#f5b301",
+  "lang": "ru",
+  "icons": []
+}

@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Тема: светлая по умолчанию, с мостом к Telegram theme params.
+   Токены переопределяются из JS (useTelegram) для тёмной темы
+   и кастомных theme params клиента Telegram.
+   ============================================================ */
+:root {
+  --surface: #ffffff;
+  --surface-2: #f4f5f7;
+  --ink: #101828;
+  --ink-muted: #667085;
+  --hairline: #eceef2;
+
+  /* Telegram safe area (заполняется из JS) */
+  --safe-top: 0px;
+  --safe-bottom: 0px;
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --surface: #17181c;
+  --surface-2: #202127;
+  --ink: #f5f6f8;
+  --ink-muted: #9aa0aa;
+  --hairline: #2a2c33;
+  color-scheme: dark;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* Числа выравниваем по табличной сетке — как в банковских приложениях */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Плавный переход между вкладками — только opacity, без сдвига */
+.page-enter {
+  animation: fade-in 0.22s ease both;
+}
+
+/* Скрываем скроллбар, но оставляем скролл */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Мягкое нажатие для интерактивных карточек */
+.press {
+  transition: transform 0.12s ease, background-color 0.15s ease;
+}
+.press:active {
+  transform: scale(0.975);
+}
