@@ -1,8 +1,9 @@
-// localStorage persistence + начальные (моковые) данные для демонстрации.
-import type { AppState, Transaction } from '../types/models'
-import { todayISO, addDays } from './date'
+// localStorage persistence. Приложение стартует с чистого листа (без операций).
+import type { AppState } from '../types/models'
+import { todayISO } from './date'
 
-const KEY = 'kopilka:v1'
+// v2 — сброс старых демо-данных: у существующих пользователей копилка обнулится.
+const KEY = 'kopilka:v2'
 
 export const DEFAULT_STATE: AppState = {
   goal: {
@@ -23,42 +24,12 @@ export const DEFAULT_STATE: AppState = {
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
 
-/** Демо-операции, чтобы приложение не было пустым при первом запуске. */
-export function makeMockTransactions(): Transaction[] {
-  const now = Date.now()
-  const mk = (
-    kind: Transaction['kind'],
-    amount: number,
-    daysAgo: number,
-    category: Transaction['category'],
-    note?: string
-  ): Transaction => ({
-    id: uid(),
-    kind,
-    amount,
-    date: addDays(todayISO(), -daysAgo),
-    category,
-    note,
-    counts: true,
-    createdAt: now - daysAgo * 86_400_000,
-  })
-
-  return [
-    mk('income', 55_000, 12, 'salary', 'Зарплата'),
-    mk('income', 3_200, 10, 'tips', 'Чаевые за смену'),
-    mk('income', 2_800, 8, 'tips', 'Чаевые за смену'),
-    mk('income', 45_000, 4, 'advance', 'Аванс'),
-    mk('expense', 6_000, 3, 'spending', 'Незапланированные траты'),
-    mk('income', 4_100, 1, 'tips', 'Чаевые за смену'),
-  ]
-}
-
 export function loadState(): AppState {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) {
-      // Первый запуск — заполняем демо-данными.
-      return { ...DEFAULT_STATE, transactions: makeMockTransactions() }
+      // Первый запуск — чистая копилка, без операций.
+      return { ...DEFAULT_STATE }
     }
     const parsed = JSON.parse(raw) as Partial<AppState>
     return {
@@ -69,7 +40,7 @@ export function loadState(): AppState {
       transactions: parsed.transactions ?? [],
     }
   } catch {
-    return { ...DEFAULT_STATE, transactions: makeMockTransactions() }
+    return { ...DEFAULT_STATE }
   }
 }
 

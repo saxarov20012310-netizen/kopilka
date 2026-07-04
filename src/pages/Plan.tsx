@@ -14,7 +14,7 @@ export function Plan() {
   const series = useMemo(() => calcBalanceSeries(state.transactions), [state.transactions])
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
+    <div className="page-enter mx-auto max-w-md px-4 pb-32" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
       <h1 className="mb-4 text-2xl font-bold">План накопления</h1>
 
       {/* Динамика баланса */}

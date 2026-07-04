@@ -19,7 +19,7 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
   const deadlineTxt = formatDay(state.goal.deadline)
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
+    <div className="page-enter mx-auto max-w-md px-4 pb-32" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
       {/* Заголовок */}
       <div className="mb-4 flex items-center justify-between">
         <div>

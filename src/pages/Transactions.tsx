@@ -34,7 +34,7 @@ export function Transactions({ onAdd }: { onAdd: (kind: TxKind) => void }) {
   }
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
+    <div className="page-enter mx-auto max-w-md px-4 pb-32" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">История</h1>
         <button

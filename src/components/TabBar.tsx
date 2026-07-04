@@ -51,10 +51,11 @@ const TABS: { key: TabKey; label: string; icon: (active: boolean) => JSX.Element
 export function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => void }) {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface/95 backdrop-blur"
-      style={{ paddingBottom: 'calc(var(--safe-bottom) + 6px)' }}
+      className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-4"
+      style={{ paddingBottom: 'calc(var(--safe-bottom) + 12px)' }}
     >
-      <div className="mx-auto flex max-w-md items-stretch justify-around px-2 pt-1.5">
+      {/* Парящая «пилюля» — оторвана от краёв, с мягкой тенью */}
+      <div className="flex w-full max-w-sm items-stretch justify-around gap-1 rounded-[26px] border border-hairline/70 bg-surface/80 px-2 py-1.5 shadow-[0_8px_30px_-6px_rgba(16,24,40,0.22)] backdrop-blur-xl">
         {TABS.map((t) => {
           const isActive = active === t.key
           return (
@@ -64,11 +65,11 @@ export function TabBar({ active, onChange }: { active: TabKey; onChange: (t: Tab
                 if (!isActive) haptic.select()
                 onChange(t.key)
               }}
-              className={`flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 transition-colors ${
-                isActive ? 'text-brand-600' : 'text-ink-muted'
+              className={`relative flex flex-1 flex-col items-center gap-1 rounded-[20px] py-2 transition-colors ${
+                isActive ? 'bg-brand-50 text-brand-600' : 'text-ink-muted'
               }`}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24">
+              <svg width="23" height="23" viewBox="0 0 24 24">
                 {t.icon(isActive)}
               </svg>
               <span className={`text-[11px] ${isActive ? 'font-semibold' : ''}`}>{t.label}</span>
