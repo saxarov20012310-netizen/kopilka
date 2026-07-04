@@ -9,10 +9,10 @@
    ============================================================ */
 :root {
   --surface: #ffffff;
-  --surface-2: #f4f5f7;
-  --ink: #101828;
-  --ink-muted: #667085;
-  --hairline: #eceef2;
+  --surface-2: #eef1f6;
+  --ink: #0f172a;
+  --ink-muted: #5a6474;
+  --hairline: #dfe4ec;
 
   /* Telegram safe area (заполняется из JS) */
   --safe-top: 0px;

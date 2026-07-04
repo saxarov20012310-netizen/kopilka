@@ -16,8 +16,10 @@ export function StatTile({
 }) {
   return (
     <div
-      className={`rounded-2xl p-4 ${
-        accent ? 'bg-brand-50 text-ink' : 'bg-surface-2'
+      className={`rounded-2xl border p-4 ${
+        accent
+          ? 'border-brand-200 bg-brand-50 text-ink'
+          : 'border-hairline bg-surface-2'
       }`}
     >
       <div className="flex items-center gap-1.5 text-ink-muted">

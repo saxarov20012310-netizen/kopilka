@@ -55,7 +55,7 @@ export function TabBar({ active, onChange }: { active: TabKey; onChange: (t: Tab
       style={{ paddingBottom: 'calc(var(--safe-bottom) + 12px)' }}
     >
       {/* Парящая «пилюля» — оторвана от краёв, с мягкой тенью */}
-      <div className="flex w-full max-w-sm items-stretch justify-around gap-1 rounded-[26px] border border-hairline/70 bg-surface/80 px-2 py-1.5 shadow-[0_8px_30px_-6px_rgba(16,24,40,0.22)] backdrop-blur-xl">
+      <div className="flex w-full max-w-sm items-stretch justify-around gap-1 rounded-[26px] border border-hairline bg-surface/95 px-2 py-1.5 shadow-[0_8px_30px_-6px_rgba(16,24,40,0.28)] backdrop-blur-xl">
         {TABS.map((t) => {
           const isActive = active === t.key
           return (

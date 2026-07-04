@@ -96,7 +96,7 @@ export function AddTransaction({
       />
 
       {/* Сумма */}
-      <div className="mt-5 rounded-3xl bg-surface p-5 shadow-card">
+      <div className="mt-5 rounded-3xl border border-hairline bg-surface p-5 shadow-card">
         <label className="text-[13px] text-ink-muted">Сумма</label>
         <div className="mt-1 flex items-baseline gap-2">
           <input
@@ -120,7 +120,7 @@ export function AddTransaction({
                 haptic.select()
                 setAmountRaw(String(amount + q))
               }}
-              className="press rounded-full bg-surface-2 px-3 py-1.5 text-[13px] font-medium"
+              className="press rounded-full border border-hairline bg-surface-2 px-3 py-1.5 text-[13px] font-medium"
             >
               +{q.toLocaleString('ru-RU')}
             </button>
@@ -141,8 +141,10 @@ export function AddTransaction({
                   haptic.select()
                   setCategory(c.value)
                 }}
-                className={`press rounded-full px-4 py-2 text-sm font-medium ${
-                  active ? 'bg-brand-500 text-white' : 'bg-surface-2 text-ink'
+                className={`press rounded-full border px-4 py-2 text-sm font-medium ${
+                  active
+                    ? 'border-brand-500 bg-brand-500 text-white'
+                    : 'border-hairline bg-surface-2 text-ink'
                 }`}
               >
                 {c.emoji} {c.label}
@@ -153,7 +155,7 @@ export function AddTransaction({
       </div>
 
       {/* Дата и комментарий */}
-      <div className="mt-4 rounded-3xl bg-surface p-4 shadow-card">
+      <div className="mt-4 rounded-3xl border border-hairline bg-surface p-4 shadow-card">
         <label className="flex items-center justify-between py-2">
           <span className="text-[15px]">Дата</span>
           <input

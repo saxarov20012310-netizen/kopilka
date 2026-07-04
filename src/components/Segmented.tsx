@@ -16,7 +16,7 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <div className="flex rounded-2xl bg-surface-2 p-1">
+    <div className="flex rounded-2xl border border-hairline bg-surface-2 p-1">
       {options.map((o) => {
         const active = o.value === value
         return (

@@ -167,7 +167,7 @@ export function Settings() {
 
       <button
         onClick={resetAll}
-        className="press mt-6 w-full rounded-2xl bg-surface py-3.5 text-[15px] font-semibold text-red-500 shadow-card"
+        className="press mt-6 w-full rounded-2xl border border-hairline bg-surface py-3.5 text-[15px] font-semibold text-red-500 shadow-card"
       >
         Сбросить операции
       </button>

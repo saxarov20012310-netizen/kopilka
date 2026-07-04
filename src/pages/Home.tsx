@@ -121,7 +121,7 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
             haptic.impact('light')
             onAdd('expense')
           }}
-          className="press rounded-2xl bg-surface py-3.5 text-[15px] font-semibold text-ink shadow-card"
+          className="press rounded-2xl border border-hairline bg-surface py-3.5 text-[15px] font-semibold text-ink shadow-card"
         >
           − Расход
         </button>

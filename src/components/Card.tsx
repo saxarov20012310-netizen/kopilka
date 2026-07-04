@@ -12,7 +12,7 @@ export function Card({
   return (
     <div
       onClick={onClick}
-      className={`rounded-3xl bg-surface shadow-card ${onClick ? 'press cursor-pointer' : ''} ${className}`}
+      className={`rounded-3xl border border-hairline bg-surface shadow-card ${onClick ? 'press cursor-pointer' : ''} ${className}`}
     >
       {children}
     </div>
