@@ -10,6 +10,8 @@ export default defineConfig({
     port: 5173,
   },
   build: {
+    // Пониженный target — совместимость со старыми webview Telegram (iOS Safari, Android WebView).
+    target: 'es2015',
     // Стабильные имена файлов (без хэша): закэшированный Telegram-ом index.html
     // всегда ссылается на существующий бандл — не будет «белого экрана» после деплоя.
     rollupOptions: {
