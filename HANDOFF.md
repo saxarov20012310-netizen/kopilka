@@ -18,8 +18,9 @@ npm run dev            # локальная разработка: http://localho
 |---|---|
 | Код (этот комп) | `C:\Users\Kirill Sackharov\Desktop\kopilka` |
 | Репозиторий | https://github.com/saxarov20012310-netizen/kopilka (публичный) |
-| Прод-URL | https://kopilka.saxarov20012310.workers.dev/ |
-| Хостинг | Cloudflare Workers (Static Assets), автодеплой из git при push в main |
+| Прод-URL (АКТУАЛЬНЫЙ) | https://kopilka-production-11aa.up.railway.app/ (Railway) |
+| Прод-URL (зеркало) | https://kopilka.saxarov20012310.workers.dev/ (Cloudflare, в РФ у владельца блокируется) |
+| Хостинг | Railway (Hobby-план). Деплой: `railway up` из папки kopilka (railway.exe в Desktop\bibi, CLI авторизован). Автодеплоя из git пока НЕТ — можно подключить репо в дашборде Railway. |
 | Бот | @SugarMoneyoffBot (id 8859739851) |
 | GitHub аккаунт | saxarov20012310-netizen (gh CLI уже авторизован) |
 | Cloudflare аккаунт | saxarov20012310@gmail.com |
