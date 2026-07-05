@@ -26,7 +26,7 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
           <div className="text-[13px] text-ink-muted">Цель накопления</div>
           <div className="text-xl font-bold">{state.goal.title}</div>
         </div>
-        <div className="rounded-full bg-brand-50 px-3 py-1.5 text-[13px] font-semibold text-brand-700">
+        <div className="rounded-full bg-brand-50 px-3 py-1.5 text-[13px] font-semibold text-brand-700 dark:bg-brand-400/15 dark:text-brand-300">
           до {deadlineTxt}
         </div>
       </div>
@@ -39,7 +39,7 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
             <div className="text-[26px] font-extrabold tabular leading-tight">
               {formatCompact(progress.saved)}
             </div>
-            <div className="mt-0.5 rounded-full bg-brand-50 px-2 py-0.5 text-[13px] font-bold text-brand-700 tabular">
+            <div className="mt-0.5 rounded-full bg-brand-50 px-2 py-0.5 text-[13px] font-bold text-brand-700 tabular dark:bg-brand-400/15 dark:text-brand-300">
               {Math.round(progress.percent)}%
             </div>
           </ProgressRing>
@@ -85,7 +85,7 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
         <Card className="divide-y divide-hairline px-4">
           {upcoming.map((e) => (
             <div key={e.source} className="flex items-center gap-3 py-3.5">
-              <div className="grid h-10 w-10 place-items-center rounded-full bg-brand-50 text-lg">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-brand-50 text-lg dark:bg-brand-400/15">
                 {e.source === 'salary' ? '💼' : e.source === 'advance' ? '📅' : '🪙'}
               </div>
               <div className="min-w-0 flex-1">

@@ -66,7 +66,9 @@ export function TabBar({ active, onChange }: { active: TabKey; onChange: (t: Tab
                 onChange(t.key)
               }}
               className={`relative flex flex-1 flex-col items-center gap-1 rounded-[20px] py-2 transition-colors ${
-                isActive ? 'bg-brand-50 text-brand-600' : 'text-ink-muted'
+                isActive
+                  ? 'bg-brand-50 text-brand-600 dark:bg-brand-400/15 dark:text-brand-300'
+                  : 'text-ink-muted'
               }`}
             >
               <svg width="23" height="23" viewBox="0 0 24 24">

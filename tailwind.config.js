@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  // Тёмная тема включается атрибутом <html data-theme="dark"> (ставит useTelegram).
+  darkMode: ['selector', "[data-theme='dark']"],
   theme: {
     extend: {
       colors: {
