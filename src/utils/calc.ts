@@ -1,6 +1,6 @@
 // Централизованные расчёты накоплений. Здесь вся математика приложения.
 import type { AppState, Transaction, IncomeSource } from '../types/models'
-import { daysBetween, todayISO, nextDayOfMonth, addDays } from './date'
+import { daysBetween, todayISO, nextPayday, addDays } from './date'
 
 export interface Progress {
   saved: number
@@ -76,8 +76,9 @@ export function calcUpcoming(state: AppState): UpcomingEvent[] {
   const salaryAmount = Math.round(monthlyIncome * 0.55)
   const advanceAmount = Math.round(monthlyIncome * 0.45)
 
-  const salaryDate = nextDayOfMonth(salaryDay, today)
-  const advanceDate = nextDayOfMonth(advanceDay, today)
+  // Если день выплаты выпадает на выходной — деньги приходят в предыдущий рабочий день.
+  const salaryDate = nextPayday(salaryDay, today)
+  const advanceDate = nextPayday(advanceDay, today)
 
   // Рекомендация с выплаты: доля дохода, но не больше половины месячной нормы.
   const suggestFrom = (amount: number) =>

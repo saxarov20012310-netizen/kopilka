@@ -70,3 +70,30 @@ export function nextDayOfMonth(day: number, fromISOStr: string): string {
 }
 
 export const monthName = (iso: string): string => MONTHS_GEN[fromISO(iso).getMonth()]
+
+/** Выходной ли день (сб/вс). */
+export function isWeekend(iso: string): boolean {
+  const d = fromISO(iso).getDay()
+  return d === 0 || d === 6
+}
+
+/** Сдвигает дату на предыдущий рабочий день, если она попадает на выходные. */
+export function prevBusinessDay(iso: string): string {
+  let cur = iso
+  while (isWeekend(cur)) cur = addDays(cur, -1)
+  return cur
+}
+
+/**
+ * Ближайшая дата выплаты с заданным днём месяца, с учётом переноса:
+ * если день выпадает на выходной — выплата в предыдущий рабочий день (ТК РФ, ст. 136).
+ * Если такая дата уже прошла — берём выплату следующего месяца.
+ */
+export function nextPayday(day: number, fromISOStr: string): string {
+  const nominal = nextDayOfMonth(day, fromISOStr)
+  const shifted = prevBusinessDay(nominal)
+  if (shifted >= fromISOStr) return shifted
+  // Сдвиг увёл дату в прошлое — берём следующий месяц.
+  const nextMonthNominal = nextDayOfMonth(day, addDays(nominal, 1))
+  return prevBusinessDay(nextMonthNominal)
+}
