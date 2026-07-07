@@ -32,6 +32,15 @@ Telegram Mini App для накопления денег к цели. Преми
   но НЕ используется. BackButton Telegram используется (в браузере — своя стрелка).
 - **Клавиатура**: focusin на текстовый input → scrollIntoView(center) с задержкой 300мс
   (attachKeyboardScroll в useTelegram.ts) — поле не прячется под клавиатурой.
+- **Доход раздельно**: Settings.salaryAmount (~25к) + advanceAmount (~12к) вместо monthlyIncome
+  (реальная структура: маленький оклад, основное — чаевые). Кнопка добавления — просто «Добавить».
+- **ИНТЕГРАЦИЯ СО SKAZKA (tips-bot, проект bibi)**: read-only. В bibi добавлен
+  `GET /api/kopilka/summary?telegram_id=&key=` (bot/api/routes.py, свой секрет KOPILKA_KEY в env
+  Railway tips-bot, путь в AUTH_EXEMPT, CORS для домена копилки в bot/main.py). Отдаёт за 30 дней:
+  смены, чай всего/в среднем, shiftsPerMonth, lastShift. В копилке: `src/utils/skazka.ts` (URL+ключ
+  в бандле — персональная интеграция) + кнопка «Подтянуть из skazka» в Настройках — заполняет
+  «Смен в месяц»/«Чаевые за смену» фактом, сохранение обычной кнопкой. Работает только в Telegram
+  (нужен user id из initDataUnsafe).
 - `useTelegram.applyTheme` больше НЕ применяет themeParams клиента к токенам — палитра фирменная,
   из Telegram берётся только colorScheme. MainButton красится в акцент темы.
 - Баг «невидимые цифры на янтарных плитках в тёмной теме» устранён самим редизайном (StatTile без заливки).
