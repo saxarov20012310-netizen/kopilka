@@ -100,6 +100,109 @@ export function calcPlanDelta(state: AppState): PlanDelta {
   return { expected, delta, status, catchUpPerDay }
 }
 
+// ───────────────────────── Стратегия накопления ─────────────────────────
+
+export interface Strategy {
+  /** Ожидаемый приток денег до дедлайна: зарплаты + авансы + чаевые, ₽. */
+  expectedInflow: number
+  /** Какую долю КАЖДОГО поступления надо откладывать, чтобы успеть (0..1+). */
+  requiredShare: number
+  /** Рекомендации в рублях. */
+  perSalary: number
+  perAdvance: number
+  perShift: number
+  /** Сколько событий каждого типа осталось до дедлайна. */
+  salaries: number
+  advances: number
+  shifts: number
+  /** Оценка размера выплат. */
+  salaryAmount: number
+  advanceAmount: number
+  /** Траты «мимо копилки» за последние 30 дней — потенциал ускорения. */
+  spent30: number
+  /** Реалистичность цели при текущем ритме работы. */
+  verdict: 'done' | 'easy' | 'fits' | 'tight' | 'unreal'
+}
+
+/** Сколько раз день месяца (зарплата/аванс) встретится в интервале (from, to]. */
+function countPaydays(day: number, fromISO: string, toISO: string): number {
+  const from = new Date(fromISO + 'T00:00:00')
+  const to = new Date(toISO + 'T00:00:00')
+  if (to <= from) return 0
+  let n = 0
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1)
+  while (cur <= to) {
+    const daysInMonth = new Date(cur.getFullYear(), cur.getMonth() + 1, 0).getDate()
+    const occ = new Date(cur.getFullYear(), cur.getMonth(), Math.min(day, daysInMonth))
+    if (occ > from && occ <= to) n++
+    cur.setMonth(cur.getMonth() + 1)
+  }
+  return n
+}
+
+/**
+ * Адаптивная стратегия: раскладывает остаток цели по РЕАЛЬНЫМ будущим
+ * поступлениям (каждая зарплата, каждый аванс, каждая смена до дедлайна).
+ * Пересчитывается на лету при любом изменении: цели, дедлайна, ритма смен,
+ * фактических накоплений.
+ */
+export function calcStrategy(state: AppState): Strategy {
+  const { remaining, daysLeft } = calcProgress(state)
+  const { monthlyIncome, salaryDay, advanceDay, savingRate, shiftsPerMonth, tipsPerShift } =
+    state.settings
+  const today = todayISO()
+
+  // Оценка выплат: зарплата ~55% месячного дохода, аванс ~45% (типичная схема).
+  const salaryAmount = Math.round(monthlyIncome * 0.55)
+  const advanceAmount = Math.round(monthlyIncome * 0.45)
+
+  const horizon = Math.max(0, daysLeft)
+  const salaries = countPaydays(salaryDay, today, state.goal.deadline)
+  const advances = countPaydays(advanceDay, today, state.goal.deadline)
+  const shifts = Math.round((shiftsPerMonth * horizon) / 30)
+
+  const expectedInflow =
+    salaries * salaryAmount + advances * advanceAmount + shifts * tipsPerShift
+
+  const requiredShare = expectedInflow > 0 ? remaining / expectedInflow : Infinity
+
+  // Рекомендация не может превышать само поступление.
+  const clampShare = Math.min(1, Math.max(0, requiredShare))
+  const perSalary = Math.round(salaryAmount * clampShare)
+  const perAdvance = Math.round(advanceAmount * clampShare)
+  const perShift = Math.round(tipsPerShift * clampShare)
+
+  // Траты мимо копилки за 30 дней — сколько «утекло» потенциала.
+  const cutoff = addDays(today, -30)
+  const spent30 = state.transactions.reduce(
+    (acc, t) =>
+      t.kind === 'expense' && !affectsSavings(t) && t.date > cutoff ? acc + t.amount : acc,
+    0
+  )
+
+  let verdict: Strategy['verdict']
+  if (remaining <= 0) verdict = 'done'
+  else if (requiredShare > 1) verdict = 'unreal'
+  else if (requiredShare > savingRate) verdict = 'tight'
+  else if (requiredShare > savingRate * 0.6) verdict = 'fits'
+  else verdict = 'easy'
+
+  return {
+    expectedInflow,
+    requiredShare,
+    perSalary,
+    perAdvance,
+    perShift,
+    salaries,
+    advances,
+    shifts,
+    salaryAmount,
+    advanceAmount,
+    spent30,
+    verdict,
+  }
+}
+
 export interface UpcomingEvent {
   date: string
   source: IncomeSource
@@ -111,47 +214,41 @@ export interface UpcomingEvent {
 }
 
 /**
- * Ближайшие поступления (зарплата, аванс) и рекомендация,
- * сколько отложить с каждого, чтобы идти по плану к цели.
+ * Ближайшие поступления и рекомендация с каждого — из стратегии,
+ * а не из фиксированной нормы: сколько реально нужно, чтобы успеть.
  */
 export function calcUpcoming(state: AppState): UpcomingEvent[] {
-  const { salaryDay, advanceDay, monthlyIncome, savingRate } = state.settings
-  const pace = calcPace(state)
+  const { salaryDay, advanceDay, shiftsPerMonth, tipsPerShift } = state.settings
+  const s = calcStrategy(state)
   const today = todayISO()
-
-  // Оценка выплат: зарплата ~55% месячного дохода, аванс ~45% (типичная схема).
-  const salaryAmount = Math.round(monthlyIncome * 0.55)
-  const advanceAmount = Math.round(monthlyIncome * 0.45)
 
   // Если день выплаты выпадает на выходной — деньги приходят в предыдущий рабочий день.
   const salaryDate = nextPayday(salaryDay, today)
   const advanceDate = nextPayday(advanceDay, today)
-
-  // Рекомендация с выплаты: доля дохода, но не больше половины месячной нормы.
-  const suggestFrom = (amount: number) =>
-    Math.min(Math.round(amount * savingRate), Math.round(pace.perMonth / 2))
+  // Ближайшая смена — в среднем через 30/сменность дней.
+  const shiftDate = addDays(today, Math.max(1, Math.round(30 / Math.max(1, shiftsPerMonth))))
 
   const events: UpcomingEvent[] = [
     {
       date: salaryDate,
       source: 'salary',
       title: 'Зарплата',
-      expected: salaryAmount,
-      suggested: Math.max(0, suggestFrom(salaryAmount)),
+      expected: s.salaryAmount,
+      suggested: s.perSalary,
     },
     {
       date: advanceDate,
       source: 'advance',
       title: 'Аванс',
-      expected: advanceAmount,
-      suggested: Math.max(0, suggestFrom(advanceAmount)),
+      expected: s.advanceAmount,
+      suggested: s.perAdvance,
     },
     {
-      date: addDays(today, 3),
+      date: shiftDate,
       source: 'tips',
-      title: 'Чаевые после смены',
-      expected: 0,
-      suggested: Math.max(0, Math.round(pace.perDay)),
+      title: 'Чаевые за смену',
+      expected: tipsPerShift,
+      suggested: s.perShift,
     },
   ]
 

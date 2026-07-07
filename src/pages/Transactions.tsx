@@ -36,9 +36,9 @@ export function Transactions({ onAdd }: { onAdd: (kind: TxKind) => void }) {
   }
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-32" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">История</h1>
+    <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
+      <div className="mb-3 flex items-center justify-between">
+        <h1 className="text-[19px] font-bold">История</h1>
         <button
           onClick={() => {
             haptic.impact('light')
@@ -63,7 +63,7 @@ export function Transactions({ onAdd }: { onAdd: (kind: TxKind) => void }) {
       {filtered.length === 0 ? (
         <EmptyState onAdd={() => onAdd('income')} />
       ) : (
-        <div className="mt-4 space-y-4">
+        <div className="mt-3.5 space-y-3.5">
           {groups.map((g) => (
             <div key={g.date}>
               <div className="mb-1 flex items-center justify-between px-1">

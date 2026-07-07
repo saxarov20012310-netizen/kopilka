@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/store'
-import { calcProgress, calcPace, calcUpcoming } from '../utils/calc'
+import { calcProgress, calcStrategy, calcUpcoming } from '../utils/calc'
 import { ProgressRing } from '../components/ProgressRing'
 import { StatTile } from '../components/StatTile'
 import { Motivation } from '../components/Motivation'
@@ -14,38 +14,40 @@ import type { TxKind } from '../types/models'
 export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
   const { state } = useStore()
   const progress = useMemo(() => calcProgress(state), [state])
-  const pace = useMemo(() => calcPace(state), [state])
+  const strategy = useMemo(() => calcStrategy(state), [state])
   const upcoming = useMemo(() => calcUpcoming(state), [state])
 
   const deadlineTxt = formatDay(state.goal.deadline)
+  const sharePct = Math.round(Math.min(1, strategy.requiredShare) * 100)
+  const ratePct = Math.round(state.settings.savingRate * 100)
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-32" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
+    <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
       {/* Заголовок */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between">
         <div>
-          <div className="text-[13px] text-ink-muted">Цель накопления</div>
-          <div className="text-xl font-bold">{state.goal.title}</div>
+          <div className="text-[12.5px] text-ink-muted">Цель накопления</div>
+          <div className="text-[19px] font-bold leading-tight">{state.goal.title}</div>
         </div>
-        <div className="rounded-pill bg-accent-soft px-3.5 py-1.5 text-[12.5px] font-semibold text-accent">
+        <div className="rounded-pill bg-accent-soft px-3 py-1.5 text-[12.5px] font-semibold text-accent">
           до {deadlineTxt}
         </div>
       </div>
 
       {/* Кольцо прогресса */}
-      <Card className="p-6">
+      <Card className="p-5">
         <div className="flex flex-col items-center">
-          <ProgressRing percent={progress.percent}>
-            <div className="text-[13px] text-muted">Накоплено</div>
-            <div className="font-display text-[26px] font-semibold tabular leading-tight text-ink">
+          <ProgressRing percent={progress.percent} size={184} stroke={13}>
+            <div className="text-[12px] text-muted">Накоплено</div>
+            <div className="font-display text-[22px] font-semibold tabular leading-tight text-ink">
               {formatCompact(progress.saved)}
             </div>
-            <div className="mt-0.5 rounded-pill bg-accent-soft px-2 py-0.5 text-[13px] font-bold text-accent tabular">
+            <div className="mt-0.5 rounded-pill bg-accent-soft px-2 py-0.5 text-[12.5px] font-bold text-accent tabular">
               {Math.round(progress.percent)}%
             </div>
           </ProgressRing>
 
-          <div className="mt-4 grid w-full grid-cols-2 gap-2">
+          <div className="mt-3.5 grid w-full grid-cols-2 gap-2">
             <StatTile label="Цель" value={formatRub(state.goal.target)} />
             <StatTile
               label="Осталось"
@@ -53,7 +55,7 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
               accent
             />
           </div>
-          <div className="mt-2 flex w-full items-center justify-center gap-1.5 text-[13px] text-muted">
+          <div className="mt-2 flex w-full items-center justify-center gap-1.5 text-[12.5px] text-muted">
             <span>
               {progress.overdue
                 ? 'Дедлайн прошёл'
@@ -65,34 +67,52 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
         </div>
       </Card>
 
-      {/* Сколько откладывать */}
-      <div className="mt-4">
-        <SectionTitle>Сколько откладывать</SectionTitle>
+      {/* Стратегия: сколько отложить с каждого типа поступления */}
+      <div className="mt-3.5">
+        <SectionTitle>Стратегия до дедлайна</SectionTitle>
         <div className="grid grid-cols-3 gap-2">
-          <StatTile label="В месяц" value={formatCompact(pace.perMonth)} hint="₽" />
-          <StatTile label="В неделю" value={formatCompact(pace.perWeek)} hint="₽" />
-          <StatTile label="В день" value={formatCompact(pace.perDay)} hint="₽" accent />
+          <StatTile label="С зарплаты" value={formatCompact(strategy.perSalary)} hint="₽" />
+          <StatTile label="С аванса" value={formatCompact(strategy.perAdvance)} hint="₽" />
+          <StatTile label="За смену" value={formatCompact(strategy.perShift)} hint="₽" accent />
         </div>
+        <p
+          className={`mt-2 px-1 text-[12.5px] leading-snug ${
+            strategy.verdict === 'unreal' || strategy.verdict === 'tight'
+              ? 'text-expense'
+              : 'text-muted'
+          }`}
+        >
+          {strategy.verdict === 'done' &&
+            'Цель закрыта — стратегия больше не нужна 🎉'}
+          {strategy.verdict === 'unreal' &&
+            `Даже откладывая всё, к дедлайну не успеть — сдвиньте срок или уменьшите цель.`}
+          {strategy.verdict === 'tight' &&
+            `Нужно ${sharePct}% с каждого поступления — выше вашей нормы ${ratePct}%. Поднимите норму или сдвиньте дедлайн.`}
+          {(strategy.verdict === 'fits' || strategy.verdict === 'easy') &&
+            `Нужно ${sharePct}% с каждого поступления — в пределах вашей нормы ${ratePct}%. Впереди ${strategy.shifts} смен и ${strategy.salaries + strategy.advances} выплат.`}
+        </p>
       </div>
 
       {/* Мотивация — живая: опережение / в графике / отставание */}
-      <div className="mt-4">
+      <div className="mt-3">
         <Motivation />
       </div>
 
       {/* Ближайшие поступления */}
-      <div className="mt-5">
+      <div className="mt-4">
         <SectionTitle>Ближайшие поступления</SectionTitle>
         <Card className="divide-y divide-line px-4">
           {upcoming.map((e) => (
-            <div key={e.source} className="flex items-center gap-3 py-3.5">
+            <div key={e.source} className="flex items-center gap-3 py-3">
               <div className="grid h-10 w-10 place-items-center rounded-full bg-accent-soft text-accent">
                 <CategoryIcon name={e.source} size={19} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-semibold text-ink">{e.title}</div>
                 <div className="text-[13px] text-muted">
-                  {e.source === 'tips' ? 'после каждой смены' : formatDay(e.date)}
+                  {e.source === 'tips'
+                    ? `≈ ${formatRub(e.expected)} · после каждой смены`
+                    : `≈ ${formatRub(e.expected)} · ${formatDay(e.date)}`}
                 </div>
               </div>
               <div className="text-right">
@@ -107,13 +127,13 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
       </div>
 
       {/* Быстрые действия */}
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-3">
         <button
           onClick={() => {
             haptic.impact('light')
             onAdd('income')
           }}
-          className="press rounded-card bg-accent py-3.5 text-[15px] font-semibold text-onaccent shadow-float"
+          className="press rounded-card bg-accent py-3 text-[15px] font-semibold text-onaccent shadow-float"
         >
           + Поступление
         </button>
@@ -122,7 +142,7 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
             haptic.impact('light')
             onAdd('expense')
           }}
-          className="press rounded-card border border-line bg-surface py-3.5 text-[15px] font-semibold text-ink shadow-card"
+          className="press rounded-card border border-line bg-surface py-3 text-[15px] font-semibold text-ink shadow-card"
         >
           − Расход
         </button>

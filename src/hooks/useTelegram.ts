@@ -75,11 +75,25 @@ export function useTelegramInit() {
   }, [])
 }
 
-/** Управление MainButton. Показывает кнопку, пока смонтирован. */
+/**
+ * Управление MainButton. Показывает кнопку, пока смонтирован.
+ * Важно: параметры (текст/активность) обновляются «на месте» через setParams,
+ * БЕЗ hide/show на каждое изменение — иначе кнопка мигает при каждом
+ * введённом символе (текст «Добавить N ₽» меняется на лету).
+ */
 export function useMainButton(
   opts: { text: string; visible?: boolean; active?: boolean; onClick: () => void }
 ) {
   const { text, visible = true, active = true, onClick } = opts
+
+  // Скрыть кнопку — только при размонтировании экрана.
+  useEffect(() => {
+    const tg = getTG()
+    if (!tg) return
+    return () => tg.MainButton.hide()
+  }, [])
+
+  // Параметры — обновление на месте, без пересоздания кнопки.
   useEffect(() => {
     const tg = getTG()
     if (!tg) return
@@ -93,15 +107,16 @@ export function useMainButton(
       color: dark ? '#C6F245' : '#5A48E8',
       text_color: dark ? '#0C0E1C' : '#FFFFFF',
     })
-    if (visible) btn.show()
-    else btn.hide()
-    active ? btn.enable() : btn.disable()
+  }, [text, visible, active])
+
+  // Обработчик клика — отдельно, чтобы смена текста не трогала подписку.
+  useEffect(() => {
+    const tg = getTG()
+    if (!tg) return
+    const btn = tg.MainButton
     btn.onClick(onClick)
-    return () => {
-      btn.offClick(onClick)
-      btn.hide()
-    }
-  }, [text, visible, active, onClick])
+    return () => btn.offClick(onClick)
+  }, [onClick])
 }
 
 /** Управление BackButton. */

@@ -7,7 +7,11 @@ export default defineConfig({
   base: './',
   server: {
     host: true,
-    port: 5173,
+    // PORT задаёт превью-харнесс (Claude Code preview); иначе стандартный 5173.
+    port: Number(process.env.PORT) || 5173,
+    strictPort: !!process.env.PORT,
+    // Дев-запуск через npm --prefix даёт 8.3-путь (KIRILL~1) — обходим строгий allow-list.
+    fs: { strict: false },
   },
   build: {
     // Пониженный target — совместимость со старыми webview Telegram (iOS Safari, Android WebView).

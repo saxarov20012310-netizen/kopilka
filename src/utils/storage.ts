@@ -27,6 +27,8 @@ export const DEFAULT_STATE: AppState = {
     salaryDay: 5,
     advanceDay: 20,
     savingRate: 0.4,
+    shiftsPerMonth: 15,
+    tipsPerShift: 3_000,
   },
   transactions: [],
   onboarded: false,

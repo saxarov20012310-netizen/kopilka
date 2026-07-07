@@ -14,22 +14,22 @@ export function Plan() {
   const series = useMemo(() => calcBalanceSeries(state.transactions), [state.transactions])
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-32" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
-      <h1 className="mb-4 text-2xl font-bold">План накопления</h1>
+    <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
+      <h1 className="mb-3 text-[19px] font-bold">План накопления</h1>
 
       {/* Динамика баланса */}
-      <Card className="p-5">
+      <Card className="p-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[13px] text-muted">Баланс копилки</div>
-            <div className="font-display text-[26px] font-semibold tabular text-ink">{formatRub(progress.saved)}</div>
+            <div className="text-[12.5px] text-muted">Баланс копилки</div>
+            <div className="font-display text-[22px] font-semibold tabular text-ink">{formatRub(progress.saved)}</div>
           </div>
           <div className="rounded-pill bg-accent-soft px-3 py-1 text-[13px] font-bold text-accent tabular">
             {Math.round(progress.percent)}%
           </div>
         </div>
-        <div className="mt-4">
-          <Sparkline points={series.map((s) => s.value)} height={72} />
+        <div className="mt-3">
+          <Sparkline points={series.map((s) => s.value)} height={64} />
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <StatTile label="Осталось" value={formatRub(progress.remaining)} />
@@ -42,7 +42,7 @@ export function Plan() {
       </Card>
 
       {/* Контрольные точки — вертикальный таймлайн (пройдена / следующая / будущая) */}
-      <h2 className="mb-3 mt-5 px-1 text-[15px] font-bold">Контрольные точки</h2>
+      <h2 className="mb-2.5 mt-4 px-1 text-[15px] font-bold">Контрольные точки</h2>
       {plan.length === 0 ? (
         <Card className="p-6 text-center text-[15px] text-ink-muted">
           {progress.reached

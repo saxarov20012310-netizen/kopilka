@@ -33,7 +33,7 @@ export interface Goal {
 }
 
 export interface Settings {
-  /** Ожидаемый месячный доход, ₽ — для подсказок. */
+  /** Ожидаемый месячный доход (зарплата+аванс, без чаевых), ₽. */
   monthlyIncome: number
   /** День зарплаты. */
   salaryDay: number
@@ -41,6 +41,10 @@ export interface Settings {
   advanceDay: number
   /** Доля дохода, которую пользователь готов откладывать (0..1). */
   savingRate: number
+  /** Сколько смен в месяц (для оценки потока чаевых). */
+  shiftsPerMonth: number
+  /** Средние чаевые за смену, ₽. */
+  tipsPerShift: number
 }
 
 export interface AppState {
