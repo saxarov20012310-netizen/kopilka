@@ -3,6 +3,25 @@
 Telegram Mini App для накопления денег к цели. Премиальный fintech-UI, React + TS + Vite + Tailwind.
 Этот файл — точка входа, чтобы продолжить работу на другом компьютере.
 
+## 🔴 ТЕКУЩАЯ ЗАДАЧА: РЕДИЗАЙН «ЭЛЕКТРИК»
+Пользователь выбрал направление «Электрик» из своего Claude Design проекта и хочет внедрить его.
+- **Дизайн-проект:** claude.ai/design projectId `af423514-8664-4177-9a5e-ae9b232ca865`, файл `Направления.dc.html`.
+- **Токены электрик-темы** (извлечены из превью экспортированного standalone-HTML):
+  - фон: `#0C0E1C` (почти чёрный сине-графит), тёмная тема по умолчанию
+  - границы/трек кольца: `#23264A` (тёмный индиго)
+  - **АКЦЕНТ: `#C6F245`** (электрик-лайм/шартрёз — ЗАМЕНА янтарю #f5b301)
+  - текст: `#EFF0FA` (почти белый)
+- **Как достать ПОЛНЫЙ дизайн (в новой сессии):**
+  1. Проще всего: DesignSync MCP → `list_files`/`get_file` по projectId. Требует design-доступ у аккаунта
+     (или интерактивный `/design-login`). В аккаунте с Claude Design это сработает.
+  2. Или декодировать standalone-экспорт (это «bundled page»): извлечь из HTML теги
+     `<script type="__bundler/manifest">` (JSON `{uuid:{data:base64, compressed, mime}}`, gzip)
+     и `<script type="__bundler/template">` (JSON-строка HTML; брать срез indexOf(open)..lastIndexOf('</script>')).
+     Готовый decoder был в scratchpad. Экспорт-файл ~741КБ назывался «Копилка - редизайн (standalone).html».
+- **План внедрения:** сменить токены в `src/styles/index.css` (сделать dark темой по умолчанию) и brand-палитру
+  в `tailwind.config.js` на акцент `#C6F245`; применить лэйауты из дизайна к экранам. ЛОГИКУ НЕ ЛОМАТЬ.
+- После внедрения: `npm run build` → `railway up --service kopilka`.
+
 ## Как продолжить на новом компьютере
 ```bash
 git clone https://github.com/saxarov20012310-netizen/kopilka.git
