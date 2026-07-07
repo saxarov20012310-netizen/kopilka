@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useStore } from '../store/store'
-import { useMainButton, useBackButton, haptic, alertNative, isTelegram } from '../hooks/useTelegram'
+import { useBackButton, haptic, alertNative, isTelegram } from '../hooks/useTelegram'
 import { Segmented } from '../components/Segmented'
 import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDay } from '../utils/date'
@@ -67,16 +67,6 @@ export function AddTransaction({
   }, [valid, dispatch, kind, amount, date, category, note, onClose])
 
   useBackButton(true, onClose)
-  useMainButton(
-    useMemo(
-      () => ({
-        text: valid ? `Добавить ${formatRub(amount)}` : 'Добавить поступление',
-        active: valid,
-        onClick: submit,
-      }),
-      [valid, amount, submit]
-    )
-  )
 
   return (
     <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
@@ -206,21 +196,19 @@ export function AddTransaction({
             : 'просто учёт — копилку не тронет'}
       </p>
 
-      {/* Вне Telegram нет MainButton — кнопка подтверждения в контенте */}
-      {!isTelegram() && (
-        <button
-          onClick={submit}
-          className={`press mt-4 w-full rounded-card py-3.5 text-[15px] font-semibold shadow-float ${
-            valid ? 'bg-accent text-onaccent' : 'bg-surface2 text-muted'
-          }`}
-        >
-          {valid
-            ? `Добавить ${formatRub(amount)}`
-            : kind === 'income'
-              ? 'Добавить поступление'
-              : 'Добавить расход'}
-        </button>
-      )}
+      {/* Кнопка подтверждения — в приложении (не системная кнопка Telegram) */}
+      <button
+        onClick={submit}
+        className={`press mt-4 w-full rounded-card py-3.5 text-[15px] font-semibold shadow-float ${
+          valid ? 'bg-accent text-onaccent' : 'bg-surface2 text-muted'
+        }`}
+      >
+        {valid
+          ? `Добавить ${formatRub(amount)}`
+          : kind === 'income'
+            ? 'Добавить поступление'
+            : 'Добавить расход'}
+      </button>
     </div>
   )
 }

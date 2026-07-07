@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store/store'
 import { Card } from '../components/Card'
-import { useMainButton, haptic, confirmNative, alertNative, isTelegram } from '../hooks/useTelegram'
+import { haptic, confirmNative, alertNative } from '../hooks/useTelegram'
 import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDayYear, daysBetween } from '../utils/date'
 import { calcStrategy } from '../utils/calc'
@@ -98,8 +98,6 @@ export function Settings() {
     haptic.success()
     await alertNative('Настройки сохранены')
   }
-
-  useMainButton({ text: 'Сохранить', visible: dirty, active: valid, onClick: save })
 
   const resetAll = async () => {
     const ok = await confirmNative('Сбросить все операции? Цель и настройки останутся.')
@@ -276,8 +274,8 @@ export function Settings() {
         </div>
       </section>
 
-      {/* Вне Telegram нет MainButton — кнопка сохранения в контенте (только при изменениях) */}
-      {!isTelegram() && dirty && (
+      {/* Кнопка сохранения — в приложении, появляется только при изменениях */}
+      {dirty && (
         <button
           onClick={save}
           className={`press mt-5 w-full rounded-card py-3.5 text-[15px] font-semibold shadow-float ${
@@ -291,7 +289,7 @@ export function Settings() {
       <button
         onClick={resetAll}
         className={`press w-full rounded-card border border-line bg-surface py-3.5 text-[15px] font-semibold text-expense shadow-card ${
-          !isTelegram() && dirty ? 'mt-3' : 'mt-5'
+          dirty ? 'mt-3' : 'mt-5'
         }`}
       >
         Сбросить операции

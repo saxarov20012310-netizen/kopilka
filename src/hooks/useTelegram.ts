@@ -45,14 +45,35 @@ function applySafeArea(tg: TelegramWebApp) {
   root.setProperty('--safe-bottom', `${bottom}px`)
 }
 
+/**
+ * Экранная клавиатура (Telegram сжимает viewport при её открытии):
+ * при фокусе на текстовое поле плавно прокручиваем его к центру видимой
+ * области — поле и кнопка под ним не прячутся под клавиатурой.
+ */
+function attachKeyboardScroll(): () => void {
+  const onFocus = (e: FocusEvent) => {
+    const el = e.target as HTMLElement | null
+    if (!el || !(el instanceof HTMLInputElement)) return
+    // Слайдер и date-picker клавиатуру не открывают.
+    if (el.type === 'range' || el.type === 'date') return
+    // Ждём анимацию клавиатуры / сжатие viewport, затем показываем поле.
+    setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 300)
+  }
+  document.addEventListener('focusin', onFocus)
+  return () => document.removeEventListener('focusin', onFocus)
+}
+
 /** Инициализация приложения в Telegram. Вызывать один раз в корне. */
 export function useTelegramInit() {
   useEffect(() => {
+    const detachKeyboard = attachKeyboardScroll()
     const tg = getTG()
     if (!tg) {
       // Вне Telegram — светлая тема по умолчанию.
       document.documentElement.setAttribute('data-theme', 'light')
-      return
+      return detachKeyboard
     }
     tg.ready()
     tg.expand()
@@ -67,6 +88,7 @@ export function useTelegramInit() {
     tg.onEvent('viewportChanged', onViewport)
 
     return () => {
+      detachKeyboard()
       tg.offEvent('themeChanged', onTheme)
       tg.offEvent('safeAreaChanged', onViewport)
       tg.offEvent('contentSafeAreaChanged', onViewport)

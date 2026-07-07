@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useMainButton, haptic } from '../hooks/useTelegram'
+import { useState } from 'react'
+import { haptic } from '../hooks/useTelegram'
 import { useStore } from '../store/store'
 import { formatRub, parseAmount } from '../utils/format'
 
@@ -50,14 +50,6 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     if (isForm) finish()
     else setI((v) => v + 1)
   }
-
-  useMainButton(
-    useMemo(
-      () => ({ text: isForm ? 'Начать копить' : 'Дальше', onClick: next }),
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [isForm, income, shifts, tips]
-    )
-  )
 
   return (
     <div
@@ -149,7 +141,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
         ))}
       </div>
 
-      {/* Fallback-кнопка вне Telegram (когда нет MainButton) */}
+      {/* Кнопка действия — в приложении (не системная кнопка Telegram) */}
       <button
         onClick={next}
         className="press rounded-card bg-accent py-4 text-[16px] font-semibold text-onaccent shadow-float"
