@@ -1,6 +1,7 @@
 import type { Transaction, IncomeSource, ExpenseCategory } from '../types/models'
 import { formatRub } from '../utils/format'
 import { formatDay } from '../utils/date'
+import { affectsSavings } from '../utils/calc'
 import { CategoryIcon, type IconName } from './icons'
 
 const SOURCE_META: Record<IncomeSource | ExpenseCategory, { label: string; icon: IconName }> = {
@@ -21,6 +22,8 @@ export function TransactionRow({
 }) {
   const meta = SOURCE_META[tx.category] ?? SOURCE_META.other
   const isIncome = tx.kind === 'income'
+  // Трата «мимо копилки» — журнальная запись, баланс не трогает: приглушаем.
+  const inPiggy = affectsSavings(tx)
   return (
     <button
       onClick={onClick}
@@ -28,20 +31,25 @@ export function TransactionRow({
     >
       <div
         className={`grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full ${
-          isIncome ? 'bg-income/[0.12] text-income' : 'bg-expense/[0.12] text-expense'
+          isIncome
+            ? 'bg-income/[0.12] text-income'
+            : inPiggy
+              ? 'bg-expense/[0.12] text-expense'
+              : 'bg-surface2 text-muted'
         }`}
       >
         <CategoryIcon name={meta.icon} size={19} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[15px] font-semibold text-ink">{tx.note || meta.label}</div>
-        <div className="text-[13px] text-muted">
+        <div className="truncate text-[13px] text-muted">
           {meta.label} · {formatDay(tx.date)}
+          {!isIncome && !inPiggy && ' · не из копилки'}
         </div>
       </div>
       <div
         className={`shrink-0 text-[14.5px] font-bold tabular ${
-          isIncome ? 'text-income' : 'text-expense'
+          isIncome ? 'text-income' : inPiggy ? 'text-expense' : 'text-muted'
         }`}
       >
         {isIncome ? '+' : '−'}

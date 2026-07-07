@@ -198,7 +198,12 @@ export function AddTransaction({
       </div>
 
       <p className="mt-3 px-1 text-center text-xs text-ink-muted">
-        {date === todayISO() ? 'Сегодня' : formatDay(date)} · сумма учитывается в накоплениях
+        {date === todayISO() ? 'Сегодня' : formatDay(date)} ·{' '}
+        {kind === 'income'
+          ? 'зачислится в копилку'
+          : category === 'goal'
+            ? 'спишется из копилки'
+            : 'просто учёт — копилку не тронет'}
       </p>
 
       {/* Вне Telegram нет MainButton — кнопка подтверждения в контенте */}

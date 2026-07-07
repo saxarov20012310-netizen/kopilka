@@ -6,6 +6,7 @@ import { Segmented } from '../components/Segmented'
 import { confirmNative, haptic } from '../hooks/useTelegram'
 import { formatRub } from '../utils/format'
 import { formatDay } from '../utils/date'
+import { affectsSavings } from '../utils/calc'
 import { CategoryIcon } from '../components/icons'
 import type { Transaction, TxKind } from '../types/models'
 
@@ -67,14 +68,17 @@ export function Transactions({ onAdd }: { onAdd: (kind: TxKind) => void }) {
             <div key={g.date}>
               <div className="mb-1 flex items-center justify-between px-1">
                 <span className="text-[13px] font-medium text-muted">{formatDay(g.date)}</span>
-                <span
-                  className={`text-[13px] font-semibold tabular ${
-                    g.net >= 0 ? 'text-income' : 'text-expense'
-                  }`}
-                >
-                  {g.net >= 0 ? '+' : '−'}
-                  {formatRub(Math.abs(g.net))}
-                </span>
+                {/* Итог дня — дельта копилки; если день только из трат мимо копилки, итога нет */}
+                {g.hasPiggy && (
+                  <span
+                    className={`text-[13px] font-semibold tabular ${
+                      g.net >= 0 ? 'text-income' : 'text-expense'
+                    }`}
+                  >
+                    {g.net >= 0 ? '+' : '−'}
+                    {formatRub(Math.abs(g.net))}
+                  </span>
+                )}
               </div>
               <Card className="divide-y divide-line px-4">
                 {g.items.map((tx) => (
@@ -115,7 +119,10 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 interface Group {
   date: string
   items: Transaction[]
+  /** Дельта копилки за день (траты «мимо копилки» не входят). */
   net: number
+  /** Есть ли в дне операции, влияющие на копилку. */
+  hasPiggy: boolean
 }
 
 function groupByDate(list: Transaction[]): Group[] {
@@ -123,11 +130,14 @@ function groupByDate(list: Transaction[]): Group[] {
   for (const tx of list) {
     let g = map.get(tx.date)
     if (!g) {
-      g = { date: tx.date, items: [], net: 0 }
+      g = { date: tx.date, items: [], net: 0, hasPiggy: false }
       map.set(tx.date, g)
     }
     g.items.push(tx)
-    g.net += tx.kind === 'income' ? tx.amount : -tx.amount
+    if (affectsSavings(tx)) {
+      g.hasPiggy = true
+      g.net += tx.kind === 'income' ? tx.amount : -tx.amount
+    }
   }
   return [...map.values()]
 }

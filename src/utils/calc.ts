@@ -11,10 +11,21 @@ export interface Progress {
   reached: boolean
 }
 
-/** Накоплено = сумма учитываемых поступлений − учитываемые расходы. */
+/**
+ * Влияет ли операция на баланс копилки.
+ * Поступления — зачисляются; из расходов баланс уменьшает только «Из копилки»
+ * (category 'goal'). Обычная трата — просто журнал «потратил вместо того,
+ * чтобы отложить»: деньги шли мимо копилки, баланс не трогаем.
+ */
+export function affectsSavings(t: Transaction): boolean {
+  if (!t.counts) return false
+  return t.kind === 'income' || t.category === 'goal'
+}
+
+/** Накоплено = поступления − списания «Из копилки». */
 export function calcSaved(transactions: Transaction[]): number {
   return transactions.reduce((acc, t) => {
-    if (!t.counts) return acc
+    if (!affectsSavings(t)) return acc
     return acc + (t.kind === 'income' ? t.amount : -t.amount)
   }, 0)
 }
@@ -174,7 +185,7 @@ export function calcPlan(state: AppState, points = 6): PlanPoint[] {
 /** Точки для мини-графика динамики баланса (накопительно по датам операций). */
 export function calcBalanceSeries(transactions: Transaction[]): { date: string; value: number }[] {
   const sorted = [...transactions]
-    .filter((t) => t.counts)
+    .filter(affectsSavings)
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.createdAt - b.createdAt))
   let running = 0
   const map = new Map<string, number>()
