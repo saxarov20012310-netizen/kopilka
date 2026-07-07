@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store/store'
 import { Card } from '../components/Card'
-import { useMainButton, haptic, confirmNative, alertNative } from '../hooks/useTelegram'
+import { useMainButton, haptic, confirmNative, alertNative, isTelegram } from '../hooks/useTelegram'
 import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDayYear, daysBetween } from '../utils/date'
 
@@ -67,45 +67,54 @@ export function Settings() {
     }
   }
 
+  const ratePct = Math.round(rate * 100)
+  const perMonthSaving = Math.round(parseAmount(income) * rate)
+  // Прогресс заливки трека слайдера (диапазон 10–80%).
+  const sliderVal = `${((ratePct - 10) / (80 - 10)) * 100}%`
+
   return (
     <div className="page-enter mx-auto max-w-md px-4 pb-32" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
-      <h1 className="mb-4 text-2xl font-bold">Цель и настройки</h1>
+      <h1 className="mb-4 text-[19px] font-bold">Цель и настройки</h1>
 
-      {/* Цель */}
-      <Card className="p-4">
-        <Field label="Название цели">
+      {/* Цель: поля-карточки, подпись сверху — значение снизу */}
+      <Card className="px-4 py-3.5">
+        <FieldCol label="Название цели">
           <input
             value={title}
             maxLength={40}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Например, на мечту"
-            className="w-full bg-transparent text-right outline-none"
+            className="w-full bg-transparent text-[15px] font-semibold text-ink outline-none placeholder:text-muted/50"
           />
-        </Field>
-        <Divider />
-        <Field label="Сумма цели">
-          <div className="flex items-center gap-1">
-            <input
-              inputMode="numeric"
-              value={target}
-              onChange={(e) => setTarget(e.target.value.replace(/[^\d\s]/g, ''))}
-              className="w-full bg-transparent text-right font-semibold tabular outline-none"
-            />
-            <span className="text-ink-muted">₽</span>
-          </div>
-        </Field>
-        <Divider />
-        <Field label="Дедлайн">
-          <input
-            type="date"
-            value={deadline}
-            min={todayISO()}
-            onChange={(e) => setDeadline(e.target.value || deadline)}
-            className="bg-transparent text-right outline-none"
-          />
-        </Field>
+        </FieldCol>
       </Card>
-      <p className="mt-2 px-2 text-xs text-ink-muted">
+      <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+        <Card className="px-4 py-3.5">
+          <FieldCol label="Сумма цели">
+            <div className="flex items-baseline gap-1">
+              <input
+                inputMode="numeric"
+                value={target}
+                onChange={(e) => setTarget(e.target.value.replace(/[^\d\s]/g, ''))}
+                className="w-full bg-transparent text-[15px] font-bold tabular text-ink outline-none"
+              />
+              <span className="text-[13px] text-muted">₽</span>
+            </div>
+          </FieldCol>
+        </Card>
+        <Card className="px-4 py-3.5">
+          <FieldCol label="Дедлайн">
+            <input
+              type="date"
+              value={deadline}
+              min={todayISO()}
+              onChange={(e) => setDeadline(e.target.value || deadline)}
+              className="w-full bg-transparent text-[15px] font-semibold tabular text-ink outline-none"
+            />
+          </FieldCol>
+        </Card>
+      </div>
+      <p className="mt-2 px-2 text-xs text-muted">
         {targetNum > 0 && daysLeft > 0
           ? `${formatRub(targetNum)} к ${formatDayYear(deadline)} · осталось ${daysLeft} дн.`
           : 'Укажите сумму и дату в будущем'}
@@ -113,61 +122,84 @@ export function Settings() {
 
       {/* Доход */}
       <h2 className="mb-2 mt-5 px-1 text-[15px] font-bold">Доход</h2>
-      <Card className="p-4">
-        <Field label="Доход в месяц">
-          <div className="flex items-center gap-1">
+      <Card className="px-4 py-3.5">
+        <FieldCol label="Доход в месяц">
+          <div className="flex items-baseline gap-1">
             <input
               inputMode="numeric"
               value={income}
               onChange={(e) => setIncome(e.target.value.replace(/[^\d\s]/g, ''))}
-              className="w-full bg-transparent text-right font-semibold tabular outline-none"
+              className="w-full bg-transparent text-[15px] font-bold tabular text-ink outline-none"
             />
-            <span className="text-ink-muted">₽</span>
+            <span className="text-[13px] text-muted">₽</span>
           </div>
-        </Field>
-        <Divider />
-        <Field label="День зарплаты">
-          <input
-            inputMode="numeric"
-            value={salaryDay}
-            onChange={(e) => setSalaryDay(e.target.value.replace(/\D/g, '').slice(0, 2))}
-            className="w-16 bg-transparent text-right font-semibold tabular outline-none"
-          />
-        </Field>
-        <Divider />
-        <Field label="День аванса">
-          <input
-            inputMode="numeric"
-            value={advanceDay}
-            onChange={(e) => setAdvanceDay(e.target.value.replace(/\D/g, '').slice(0, 2))}
-            className="w-16 bg-transparent text-right font-semibold tabular outline-none"
-          />
-        </Field>
+        </FieldCol>
       </Card>
+      <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+        <Card className="px-4 py-3.5">
+          <FieldCol label="День зарплаты">
+            <input
+              inputMode="numeric"
+              value={salaryDay}
+              onChange={(e) => setSalaryDay(e.target.value.replace(/\D/g, '').slice(0, 2))}
+              className="w-full bg-transparent text-[15px] font-bold tabular text-ink outline-none"
+            />
+          </FieldCol>
+        </Card>
+        <Card className="px-4 py-3.5">
+          <FieldCol label="День аванса">
+            <input
+              inputMode="numeric"
+              value={advanceDay}
+              onChange={(e) => setAdvanceDay(e.target.value.replace(/\D/g, '').slice(0, 2))}
+              className="w-full bg-transparent text-[15px] font-bold tabular text-ink outline-none"
+            />
+          </FieldCol>
+        </Card>
+      </div>
 
-      {/* Норма откладывания */}
-      <h2 className="mb-2 mt-5 px-1 text-[15px] font-bold">
-        Откладывать с выплаты · {Math.round(rate * 100)}%
-      </h2>
-      <Card className="p-4">
+      {/* Норма откладывания — фирменная тёмная карта с лаймовым слайдером */}
+      <section className="mt-5 rounded-lg2 bg-inverse p-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[13.5px] font-semibold text-[#EFF0FA]/85">Откладывать с выплаты</h3>
+          <span className="font-display text-[22px] font-semibold tabular text-lime">{ratePct}%</span>
+        </div>
         <input
           type="range"
           min={10}
           max={80}
           step={5}
-          value={Math.round(rate * 100)}
+          value={ratePct}
           onChange={(e) => setRate(Number(e.target.value) / 100)}
-          className="w-full accent-brand-500"
+          className="slider-lime mt-5"
+          style={{ '--val': sliderVal } as React.CSSProperties}
         />
-        <div className="mt-1 flex justify-between text-xs text-ink-muted">
+        <div className="mt-2 flex justify-between text-[11.5px] text-[#83869E]">
           <span>Комфортно</span>
           <span>Агрессивно</span>
         </div>
-      </Card>
+        <div className="mt-3 border-t border-white/[0.06] pt-3 text-[12.5px] text-[#83869E]">
+          ≈ <b className="tabular text-lime">{formatRub(perMonthSaving)}</b> в месяц при вашем доходе
+        </div>
+      </section>
+
+      {/* Вне Telegram нет MainButton — кнопка сохранения в контенте */}
+      {!isTelegram() && (
+        <button
+          onClick={save}
+          className={`press mt-6 w-full rounded-card py-3.5 text-[15px] font-semibold shadow-float ${
+            valid ? 'bg-accent text-onaccent' : 'bg-surface2 text-muted'
+          }`}
+        >
+          Сохранить
+        </button>
+      )}
 
       <button
         onClick={resetAll}
-        className="press mt-6 w-full rounded-2xl border border-hairline bg-surface py-3.5 text-[15px] font-semibold text-red-500 shadow-card"
+        className={`press w-full rounded-card border border-line bg-surface py-3.5 text-[15px] font-semibold text-expense shadow-card ${
+          isTelegram() ? 'mt-6' : 'mt-3'
+        }`}
       >
         Сбросить операции
       </button>
@@ -175,15 +207,12 @@ export function Settings() {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+// Поле-карточка: маленькая подпись сверху, значение снизу.
+function FieldCol({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="flex items-center gap-3 py-2.5">
-      <span className="shrink-0 text-[15px]">{label}</span>
-      <div className="flex-1">{children}</div>
+    <label className="block">
+      <span className="text-[11.5px] text-muted">{label}</span>
+      <div className="mt-1">{children}</div>
     </label>
   )
-}
-
-function Divider() {
-  return <div className="h-px bg-hairline" />
 }

@@ -3,24 +3,23 @@
 Telegram Mini App для накопления денег к цели. Премиальный fintech-UI, React + TS + Vite + Tailwind.
 Этот файл — точка входа, чтобы продолжить работу на другом компьютере.
 
-## 🔴 ТЕКУЩАЯ ЗАДАЧА: РЕДИЗАЙН «ЭЛЕКТРИК»
-Пользователь выбрал направление «Электрик» из своего Claude Design проекта и хочет внедрить его.
-- **Дизайн-проект:** claude.ai/design projectId `af423514-8664-4177-9a5e-ae9b232ca865`, файл `Направления.dc.html`.
-- **Токены электрик-темы** (извлечены из превью экспортированного standalone-HTML):
-  - фон: `#0C0E1C` (почти чёрный сине-графит), тёмная тема по умолчанию
-  - границы/трек кольца: `#23264A` (тёмный индиго)
-  - **АКЦЕНТ: `#C6F245`** (электрик-лайм/шартрёз — ЗАМЕНА янтарю #f5b301)
-  - текст: `#EFF0FA` (почти белый)
-- **Как достать ПОЛНЫЙ дизайн (в новой сессии):**
-  1. Проще всего: DesignSync MCP → `list_files`/`get_file` по projectId. Требует design-доступ у аккаунта
-     (или интерактивный `/design-login`). В аккаунте с Claude Design это сработает.
-  2. Или декодировать standalone-экспорт (это «bundled page»): извлечь из HTML теги
-     `<script type="__bundler/manifest">` (JSON `{uuid:{data:base64, compressed, mime}}`, gzip)
-     и `<script type="__bundler/template">` (JSON-строка HTML; брать срез indexOf(open)..lastIndexOf('</script>')).
-     Готовый decoder был в scratchpad. Экспорт-файл ~741КБ назывался «Копилка - редизайн (standalone).html».
-- **План внедрения:** сменить токены в `src/styles/index.css` (сделать dark темой по умолчанию) и brand-палитру
-  в `tailwind.config.js` на акцент `#C6F245`; применить лэйауты из дизайна к экранам. ЛОГИКУ НЕ ЛОМАТЬ.
-- После внедрения: `npm run build` → `railway up --service kopilka`.
+## ✅ РЕДИЗАЙН «ЭЛЕКТРИК» — ВНЕДРЁН (июль 2026)
+Дизайн-система из спецификации «Спецификация - Электрик.md» реализована полностью и задеплоена:
+- **Токены двухрежимные** (`src/styles/index.css`): light — фон `#F1F2F7`, акцент индиго `#5A48E8`;
+  dark — фон `#0C0E1C`, акцент лайм `#C6F245`. Tailwind-классы завязаны на CSS-переменные
+  (`accent`, `onaccent`, `income`, `expense`, `line`, `surface2`, `inverse`...), см. `tailwind.config.js`.
+  Старые классы (`brand-*`, `hairline`, `ink-muted`) — алиасы на новые токены.
+- **Шрифты:** Onest (текст) + Unbounded (крупные суммы, `font-display`) с Google Fonts (`index.html`).
+- **Иконки:** свой SVG-набор `src/components/icons.tsx` (зарплата/аванс/чаевые/цель/трата/другое/кошелёк) — эмодзи убраны.
+- **Экраны по спеке:** таймлайн контрольных точек с состояниями (пройдена/следующая-карточка/будущая),
+  Settings с полями-карточками и тёмной картой слайдера (лайм, свечение), живая мотивация с дельтой к плану
+  (`calcPlanDelta` в calc.ts: опережение/в графике/отставание + «догоните +N ₽/день»).
+- **Память:** Telegram CloudStorage (чанки по 3800 симв., ключи `k2m`, `k2_i`) + localStorage
+  (формат `{updatedAt, state}`, старый формат мигрируется). Побеждает более свежая копия.
+- **Вне Telegram** (браузер): фолбэк-кнопки «Добавить»/«Сохранить»/назад (MainButton/BackButton только в TG).
+- `useTelegram.applyTheme` больше НЕ применяет themeParams клиента к токенам — палитра фирменная,
+  из Telegram берётся только colorScheme. MainButton красится в акцент темы.
+- Баг «невидимые цифры на янтарных плитках в тёмной теме» устранён самим редизайном (StatTile без заливки).
 
 ## Как продолжить на новом компьютере
 ```bash
@@ -53,12 +52,8 @@ npm run dev            # локальная разработка: http://localho
 
 ## ЧТО ОСТАЛОСЬ (todo, по приоритету)
 
-### 1. [БАГ] Тёмная тема — не видно текст на «янтарных» плитках
-На скриншоте пользователя (Telegram dark mode) плитки с `accent` («Осталось», «В день») имеют светлый фон `bg-brand-50`, а текст `text-ink` в тёмной теме становится светлым → **цифры невидимы**.
-- Файл: `src/components/StatTile.tsx` — вариант `accent` использует `bg-brand-50 text-ink`.
-- Также проверить все места с `bg-brand-50` + текстом, зависящим от темы: чип «до 18 января» и «0%» (`text-brand-700` на `bg-brand-50` — там ок, тёмный текст на светлом), эмодзи-кружки (только фон — ок).
-- **Фикс:** у accent-плитки фон всегда светлый (cream), значит текст должен быть всегда тёмным независимо от темы. Заменить `text-ink` → фиксированный тёмный (напр. `text-brand-900`), а лейбл — на тёмный приглушённый (напр. `text-brand-800/70`). Либо сделать accent-фон адаптивным к тёмной теме (`dark:bg-brand-500/15 dark:text-brand-100`) — но проще зафиксировать тёмный текст.
-- После фикса ОБЯЗАТЕЛЬНО проверить в тёмной теме (эмуляция: `preview_resize` colorScheme dark, либо dev-стаб Telegram с `colorScheme:'dark'`).
+### 1. ~~[БАГ] Тёмная тема — не видно текст на «янтарных» плитках~~ ✅ ИСПРАВЛЕНО
+Устранено редизайном «Электрик»: StatTile больше не заливается, значение красится акцентом темы.
 
 ### 2. BotFather — URL «главного» Mini App
 Проверить, что в BotFather → /mybots → @SugarMoneyoffBot → Bot Settings → Configure Mini App → Edit Mini App URL стоит:
@@ -73,7 +68,7 @@ https://kopilka.saxarov20012310.workers.dev/
 ### 4. Дальнейшие улучшения (по желанию)
 - Пуш-напоминания в дни зарплаты (5) / аванса (20): «пора отложить N ₽».
 - Несколько целей и переключение.
-- Бэкенд для синхронизации между устройствами (сейчас данные только в localStorage браузера, ключ `kopilka:v2`).
+- ~~Бэкенд для синхронизации между устройствами~~ ✅ сделано через Telegram CloudStorage (см. `src/utils/storage.ts`).
 - Прогноз даты достижения цели при текущем темпе.
 - Редактирование операции (сейчас только удаление).
 
@@ -88,11 +83,11 @@ https://kopilka.saxarov20012310.workers.dev/
 ## Архитектура
 ```
 src/
-  components/  ProgressRing, Sparkline, TabBar (парящий), StatTile, Card, Segmented, Motivation, TransactionRow, ErrorBoundary
+  components/  ProgressRing, Sparkline, TabBar (парящий), StatTile, Card, Segmented, Motivation (живая, по дельте к плану), TransactionRow, ErrorBoundary, icons (SVG-набор)
   pages/       Home, Plan, Transactions, Settings, Onboarding, AddTransaction
   hooks/       useTelegram (тема, safe area, MainButton, BackButton, haptic, popup)
-  store/       store.tsx (useReducer + Context, автосохранение в localStorage)
-  utils/       format (рубли), date, calc (вся математика накоплений), storage
+  store/       store.tsx (useReducer + Context; автосохранение: localStorage + Telegram CloudStorage, гидратация из облака при старте)
+  utils/       format (рубли), date, calc (вся математика накоплений + calcPlanDelta), storage (два слоя памяти)
   types/       models.ts, telegram.d.ts
   styles/      index.css (CSS-переменные темы: светлая + тёмная через [data-theme='dark'])
 ```

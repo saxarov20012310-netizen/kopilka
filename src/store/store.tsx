@@ -1,14 +1,26 @@
-// Глобальный стор на useReducer + Context, с автосохранением в localStorage.
+// Глобальный стор на useReducer + Context.
+// Автосохранение: localStorage сразу + Telegram CloudStorage (с дебаунсом).
+// При старте подтягиваем облачную копию — если она свежее локальной
+// (например, webview почистился или пользователь сменил устройство).
 import {
   createContext,
   useContext,
   useEffect,
   useMemo,
   useReducer,
+  useRef,
+  useState,
   type ReactNode,
 } from 'react'
 import type { AppState, Goal, Settings, Transaction } from '../types/models'
-import { loadState, saveState, newId } from '../utils/storage'
+import {
+  loadLocal,
+  loadState,
+  saveLocal,
+  saveCloudDebounced,
+  loadCloudState,
+  newId,
+} from '../utils/storage'
 
 type Action =
   | { type: 'ADD_TX'; tx: Omit<Transaction, 'id' | 'createdAt'> }
@@ -17,6 +29,7 @@ type Action =
   | { type: 'SET_GOAL'; goal: Partial<Goal> }
   | { type: 'SET_SETTINGS'; settings: Partial<Settings> }
   | { type: 'SET_ONBOARDED'; value: boolean }
+  | { type: 'HYDRATE'; state: AppState }
   | { type: 'RESET' }
 
 function reducer(state: AppState, action: Action): AppState {
@@ -47,6 +60,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, settings: { ...state.settings, ...action.settings } }
     case 'SET_ONBOARDED':
       return { ...state, onboarded: action.value }
+    case 'HYDRATE':
+      return action.state
     case 'RESET':
       return { ...loadState(), onboarded: state.onboarded }
     default:
@@ -62,11 +77,31 @@ interface StoreContextValue {
 const StoreContext = createContext<StoreContextValue | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, loadState)
+  // Метка локальной копии на момент старта — до любых автосохранений.
+  const initialRef = useRef(loadLocal())
+  const [state, dispatch] = useReducer(reducer, initialRef.current.state)
+  // В облако не пишем, пока не сверились с ним (чтобы не затереть свежие данные старыми).
+  const [cloudChecked, setCloudChecked] = useState(false)
+
+  // Один раз при старте: сверяемся с облаком Telegram.
+  useEffect(() => {
+    let cancelled = false
+    loadCloudState().then((cloud) => {
+      if (cancelled) return
+      if (cloud && cloud.updatedAt > initialRef.current.updatedAt) {
+        dispatch({ type: 'HYDRATE', state: cloud.state })
+      }
+      setCloudChecked(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
-    saveState(state)
-  }, [state])
+    const updatedAt = saveLocal(state)
+    if (cloudChecked) saveCloudDebounced(state, updatedAt)
+  }, [state, cloudChecked])
 
   const value = useMemo(() => ({ state, dispatch }), [state])
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

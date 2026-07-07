@@ -86,7 +86,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
       {/* Fallback-кнопка вне Telegram (когда нет MainButton) */}
       <button
         onClick={next}
-        className="press rounded-2xl bg-brand-500 py-4 text-[16px] font-semibold text-white shadow-float"
+        className="press rounded-card bg-accent py-4 text-[16px] font-semibold text-onaccent shadow-float"
       >
         {last ? 'Начать копить' : 'Дальше'}
       </button>

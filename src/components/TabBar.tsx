@@ -55,7 +55,7 @@ export function TabBar({ active, onChange }: { active: TabKey; onChange: (t: Tab
       style={{ paddingBottom: 'calc(var(--safe-bottom) + 12px)' }}
     >
       {/* Парящая «пилюля» — оторвана от краёв, с мягкой тенью */}
-      <div className="flex w-full max-w-sm items-stretch justify-around gap-1 rounded-[26px] border border-hairline bg-surface/95 px-2 py-1.5 shadow-[0_8px_30px_-6px_rgba(16,24,40,0.28)] backdrop-blur-xl">
+      <div className="flex w-full max-w-app items-stretch justify-around gap-1 rounded-pill border border-line bg-surface/95 px-2 py-1.5 shadow-float backdrop-blur-xl">
         {TABS.map((t) => {
           const isActive = active === t.key
           return (
@@ -65,10 +65,8 @@ export function TabBar({ active, onChange }: { active: TabKey; onChange: (t: Tab
                 if (!isActive) haptic.select()
                 onChange(t.key)
               }}
-              className={`relative flex flex-1 flex-col items-center gap-1 rounded-[20px] py-2 transition-colors ${
-                isActive
-                  ? 'bg-brand-50 text-brand-600 dark:bg-brand-400/15 dark:text-brand-300'
-                  : 'text-ink-muted'
+              className={`relative flex flex-1 flex-col items-center gap-1 rounded-pill py-2 transition-colors ${
+                isActive ? 'bg-accent text-onaccent' : 'text-muted'
               }`}
             >
               <svg width="23" height="23" viewBox="0 0 24 24">

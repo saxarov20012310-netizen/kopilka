@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 /**
  * Круговой индикатор прогресса с плавной анимацией заливки.
- * Градиент — фирменный янтарный.
+ * Цвет — акцент темы (индиго в светлой, лайм в тёмной), трек — --ring-track.
  */
 export function ProgressRing({
   percent,
@@ -45,19 +45,12 @@ export function ProgressRing({
   return (
     <div className="relative inline-grid place-items-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <defs>
-          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fcd34d" />
-            <stop offset="55%" stopColor="#f5b301" />
-            <stop offset="100%" stopColor="#d99700" />
-          </linearGradient>
-        </defs>
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--hairline)"
+          stroke="var(--ring-track)"
           strokeWidth={stroke}
         />
         <circle
@@ -65,7 +58,7 @@ export function ProgressRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="url(#ringGrad)"
+          stroke="var(--accent)"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circ}

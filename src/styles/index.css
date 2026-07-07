@@ -3,30 +3,53 @@
 @tailwind utilities;
 
 /* ============================================================
-   Тема: светлая по умолчанию, с мостом к Telegram theme params.
-   Токены переопределяются из JS (useTelegram) для тёмной темы
-   и кастомных theme params клиента Telegram.
+   Дизайн-система «Электрик» — необанк нового поколения.
+   Светлая тема: акцент индиго #5A48E8 (лайм на белом не читается).
+   Тёмная тема: чернильно-синий фон + лаймовый акцент #C6F245.
+   Токены — фиксированные, тему выбирает useTelegram (data-theme).
    ============================================================ */
 :root {
-  --surface: #ffffff;
-  --surface-2: #eef1f6;
-  --ink: #0f172a;
-  --ink-muted: #5a6474;
-  --hairline: #dfe4ec;
-
   /* Telegram safe area (заполняется из JS) */
   --safe-top: 0px;
   --safe-bottom: 0px;
+
+  --bg: #f1f2f7;
+  --surface: #ffffff;
+  --surface-2: #e4e5f0;
+  --surface-inverse: #14162b;
+  --text: #14162b;
+  --text-muted: #6f7288;
+  --accent: #5a48e8;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(90, 72, 232, 0.1);
+  --lime: #c6f245;
+  --income: #578400;
+  --expense: #e5484d;
+  --border: #e4e5f0;
+  --ring-track: #e4e5f0;
+  --shadow-card: 0 2px 10px rgba(20, 22, 43, 0.05);
+  --shadow-float: 0 8px 24px rgba(20, 22, 43, 0.1);
 
   color-scheme: light;
 }
 
 :root[data-theme='dark'] {
-  --surface: #17181c;
-  --surface-2: #202127;
-  --ink: #f5f6f8;
-  --ink-muted: #9aa0aa;
-  --hairline: #2a2c33;
+  --bg: #0c0e1c;
+  --surface: #161930;
+  --surface-2: #1b1f42;
+  --surface-inverse: #161930;
+  --text: #eff0fa;
+  --text-muted: #83869e;
+  --accent: #c6f245;
+  --on-accent: #0c0e1c;
+  --accent-soft: rgba(198, 242, 69, 0.14);
+  --income: #c6f245;
+  --expense: #ff7a85;
+  --border: rgba(255, 255, 255, 0.06);
+  --ring-track: #23264a;
+  --shadow-card: none;
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.35);
+
   color-scheme: dark;
 }
 
@@ -42,15 +65,23 @@ body,
 
 body {
   margin: 0;
-  background: var(--surface-2);
-  color: var(--ink);
-  font-family: -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Onest', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
 }
 
+a {
+  color: var(--accent);
+}
+a:hover {
+  opacity: 0.8;
+}
+
 /* Числа выравниваем по табличной сетке — как в банковских приложениях */
-.tabular {
+.tabular,
+.tabular-nums {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
@@ -58,6 +89,31 @@ body {
 /* Плавный переход между вкладками — только opacity, без сдвига */
 .page-enter {
   animation: fade-in 0.22s ease both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Появление карточек со stagger: задаётся через style={{ '--i': n }} */
+.rise {
+  animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Скрываем скроллбар, но оставляем скролл */
@@ -69,10 +125,57 @@ body {
   scrollbar-width: none;
 }
 
+/* Кастомный слайдер нормы откладывания — живёт на тёмной «фирменной» карте,
+   поэтому цвета фиксированные: лаймовый ползунок, индиго-трек. Прогресс
+   заливки задаётся переменной --val (из React). */
+.slider-lime {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #c6f245 var(--val, 50%),
+    #23264a var(--val, 50%)
+  );
+  outline: none;
+}
+.slider-lime::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #c6f245;
+  box-shadow: 0 0 0 6px rgba(198, 242, 69, 0.16), 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+.slider-lime::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #c6f245;
+  box-shadow: 0 0 0 6px rgba(198, 242, 69, 0.16), 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
 /* Мягкое нажатие для интерактивных карточек */
 .press {
   transition: transform 0.12s ease, background-color 0.15s ease;
 }
 .press:active {
   transform: scale(0.975);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

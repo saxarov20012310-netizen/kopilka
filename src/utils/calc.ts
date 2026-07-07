@@ -53,6 +53,42 @@ export function calcPace(state: AppState): Pace {
   }
 }
 
+export interface PlanDelta {
+  /** Сколько должно быть накоплено к сегодняшнему дню по линейному плану. */
+  expected: number
+  /** Факт − план: > 0 — опережение, < 0 — отставание. */
+  delta: number
+  status: 'start' | 'ahead' | 'onTrack' | 'behind' | 'reached' | 'overdue'
+  /** Сколько добавлять в день, чтобы догнать план (окно до 7 дней). */
+  catchUpPerDay: number
+}
+
+/** Положение относительно плана: линейная линия от startDate до дедлайна. */
+export function calcPlanDelta(state: AppState): PlanDelta {
+  const { saved, daysLeft, reached, overdue } = calcProgress(state)
+  const target = state.goal.target
+  const start = state.goal.startDate || todayISO()
+  const totalDays = Math.max(1, daysBetween(start, state.goal.deadline))
+  const elapsed = Math.min(totalDays, Math.max(0, daysBetween(start, todayISO())))
+  const expected = (target * elapsed) / totalDays
+  const delta = saved - expected
+
+  // Допуск «в графике»: 1% цели, но не меньше 500 ₽ — чтобы не дёргать статус по мелочи.
+  const tolerance = Math.max(500, target * 0.01)
+  const catchWindow = Math.max(1, Math.min(7, daysLeft))
+  const catchUpPerDay = delta < 0 ? Math.ceil(-delta / catchWindow) : 0
+
+  let status: PlanDelta['status']
+  if (reached) status = 'reached'
+  else if (overdue) status = 'overdue'
+  else if (elapsed <= 2 && saved === 0) status = 'start'
+  else if (delta >= tolerance) status = 'ahead'
+  else if (delta <= -tolerance) status = 'behind'
+  else status = 'onTrack'
+
+  return { expected, delta, status, catchUpPerDay }
+}
+
 export interface UpcomingEvent {
   date: string
   source: IncomeSource

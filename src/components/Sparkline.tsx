@@ -39,13 +39,13 @@ export function Sparkline({
     >
       <defs>
         <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f5b301" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#f5b301" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={area} fill="url(#sparkFill)" />
-      <path d={line} fill="none" stroke="#f5b301" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={coords[coords.length - 1][0]} cy={coords[coords.length - 1][1]} r={3.5} fill="#d99700" />
+      <path d={line} fill="none" stroke="var(--accent)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={coords[coords.length - 1][0]} cy={coords[coords.length - 1][1]} r={3.5} fill="var(--accent)" />
     </svg>
   )
 }

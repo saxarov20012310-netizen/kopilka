@@ -16,7 +16,7 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <div className="flex rounded-2xl border border-hairline bg-surface-2 p-1">
+    <div className="flex rounded-pill border border-line bg-surface2 p-1">
       {options.map((o) => {
         const active = o.value === value
         return (
@@ -26,8 +26,8 @@ export function Segmented<T extends string>({
               if (!active) haptic.select()
               onChange(o.value)
             }}
-            className={`flex-1 rounded-xl py-2 text-sm font-medium transition-all ${
-              active ? 'bg-surface text-ink shadow-sm' : 'text-ink-muted'
+            className={`flex-1 rounded-pill py-2 text-sm font-semibold transition-all ${
+              active ? 'bg-accent text-onaccent' : 'text-muted'
             }`}
           >
             {o.label}

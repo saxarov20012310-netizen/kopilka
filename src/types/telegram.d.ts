@@ -45,6 +45,17 @@ export interface TelegramMainButton {
   hideProgress(): void
 }
 
+// Облачное хранилище Telegram (Bot API 6.9+): переживает переустановку
+// и чистку webview, синхронизируется между устройствами пользователя.
+export interface TelegramCloudStorage {
+  setItem(key: string, value: string, callback?: (err: string | null, ok?: boolean) => void): void
+  getItem(key: string, callback: (err: string | null, value?: string) => void): void
+  getItems(keys: string[], callback: (err: string | null, values?: Record<string, string>) => void): void
+  removeItem(key: string, callback?: (err: string | null, ok?: boolean) => void): void
+  removeItems(keys: string[], callback?: (err: string | null, ok?: boolean) => void): void
+  getKeys(callback: (err: string | null, keys?: string[]) => void): void
+}
+
 export interface TelegramBackButton {
   isVisible: boolean
   show(): void
@@ -70,6 +81,8 @@ export interface TelegramWebApp {
   MainButton: TelegramMainButton
   BackButton: TelegramBackButton
   HapticFeedback: TelegramHapticFeedback
+  /** Опционально: старые клиенты Telegram могут не поддерживать. */
+  CloudStorage?: TelegramCloudStorage
   ready(): void
   expand(): void
   close(): void

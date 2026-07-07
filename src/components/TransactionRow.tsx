@@ -1,14 +1,15 @@
 import type { Transaction, IncomeSource, ExpenseCategory } from '../types/models'
 import { formatRub } from '../utils/format'
 import { formatDay } from '../utils/date'
+import { CategoryIcon, type IconName } from './icons'
 
-const SOURCE_META: Record<IncomeSource | ExpenseCategory, { label: string; emoji: string }> = {
-  salary: { label: 'Зарплата', emoji: '💼' },
-  advance: { label: 'Аванс', emoji: '📅' },
-  tips: { label: 'Чаевые', emoji: '🪙' },
-  goal: { label: 'В копилку', emoji: '🎯' },
-  spending: { label: 'Трата', emoji: '🛍️' },
-  other: { label: 'Другое', emoji: '✳️' },
+const SOURCE_META: Record<IncomeSource | ExpenseCategory, { label: string; icon: IconName }> = {
+  salary: { label: 'Зарплата', icon: 'salary' },
+  advance: { label: 'Аванс', icon: 'advance' },
+  tips: { label: 'Чаевые', icon: 'tips' },
+  goal: { label: 'В копилку', icon: 'goal' },
+  spending: { label: 'Трата', icon: 'spending' },
+  other: { label: 'Другое', icon: 'other' },
 }
 
 export function TransactionRow({
@@ -25,18 +26,22 @@ export function TransactionRow({
       onClick={onClick}
       className="press flex w-full items-center gap-3 py-3 text-left"
     >
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-2 text-xl">
-        {meta.emoji}
+      <div
+        className={`grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full ${
+          isIncome ? 'bg-income/[0.12] text-income' : 'bg-expense/[0.12] text-expense'
+        }`}
+      >
+        <CategoryIcon name={meta.icon} size={19} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[15px] font-semibold">{tx.note || meta.label}</div>
-        <div className="text-[13px] text-ink-muted">
+        <div className="truncate text-[15px] font-semibold text-ink">{tx.note || meta.label}</div>
+        <div className="text-[13px] text-muted">
           {meta.label} · {formatDay(tx.date)}
         </div>
       </div>
       <div
-        className={`shrink-0 text-[15px] font-bold tabular ${
-          isIncome ? 'text-emerald-600' : 'text-ink'
+        className={`shrink-0 text-[14.5px] font-bold tabular ${
+          isIncome ? 'text-income' : 'text-expense'
         }`}
       >
         {isIncome ? '+' : '−'}

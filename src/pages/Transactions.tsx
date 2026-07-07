@@ -6,6 +6,7 @@ import { Segmented } from '../components/Segmented'
 import { confirmNative, haptic } from '../hooks/useTelegram'
 import { formatRub } from '../utils/format'
 import { formatDay } from '../utils/date'
+import { CategoryIcon } from '../components/icons'
 import type { Transaction, TxKind } from '../types/models'
 
 type Filter = 'all' | TxKind
@@ -42,7 +43,7 @@ export function Transactions({ onAdd }: { onAdd: (kind: TxKind) => void }) {
             haptic.impact('light')
             onAdd('income')
           }}
-          className="press rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-float"
+          className="press rounded-pill bg-accent px-4 py-2 text-sm font-semibold text-onaccent shadow-float"
         >
           + Добавить
         </button>
@@ -65,13 +66,17 @@ export function Transactions({ onAdd }: { onAdd: (kind: TxKind) => void }) {
           {groups.map((g) => (
             <div key={g.date}>
               <div className="mb-1 flex items-center justify-between px-1">
-                <span className="text-[13px] font-medium text-ink-muted">{formatDay(g.date)}</span>
-                <span className="text-[13px] font-semibold tabular text-ink-muted">
+                <span className="text-[13px] font-medium text-muted">{formatDay(g.date)}</span>
+                <span
+                  className={`text-[13px] font-semibold tabular ${
+                    g.net >= 0 ? 'text-income' : 'text-expense'
+                  }`}
+                >
                   {g.net >= 0 ? '+' : '−'}
                   {formatRub(Math.abs(g.net))}
                 </span>
               </div>
-              <Card className="divide-y divide-hairline px-4">
+              <Card className="divide-y divide-line px-4">
                 {g.items.map((tx) => (
                   <TransactionRow key={tx.id} tx={tx} onClick={() => handleDelete(tx)} />
                 ))}
@@ -90,14 +95,16 @@ export function Transactions({ onAdd }: { onAdd: (kind: TxKind) => void }) {
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="mt-16 flex flex-col items-center text-center">
-      <div className="grid h-20 w-20 place-items-center rounded-full bg-brand-50 text-4xl">🪙</div>
-      <div className="mt-4 text-lg font-bold">Пока нет операций</div>
-      <p className="mt-1 max-w-[260px] text-[15px] text-ink-muted">
+      <div className="grid h-20 w-20 place-items-center rounded-full bg-accent-soft text-accent">
+        <CategoryIcon name="wallet" size={34} strokeWidth={1.6} />
+      </div>
+      <div className="mt-4 text-lg font-bold text-ink">Пока нет операций</div>
+      <p className="mt-1 max-w-[260px] text-[15px] text-muted">
         Добавьте первое поступление — зарплату, аванс или чаевые, и копилка начнёт расти.
       </p>
       <button
         onClick={onAdd}
-        className="press mt-5 rounded-2xl bg-brand-500 px-6 py-3 text-[15px] font-semibold text-white shadow-float"
+        className="press mt-5 rounded-card bg-accent px-6 py-3 text-[15px] font-semibold text-onaccent shadow-float"
       >
         Добавить поступление
       </button>

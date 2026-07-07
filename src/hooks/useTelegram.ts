@@ -13,23 +13,24 @@ export function isTelegram(): boolean {
   return !!tg && !!tg.initData
 }
 
-/** Применяет тему Telegram к CSS-переменным и <html data-theme>. */
+// Фон экрана в фирменной палитре «Электрик» — под цвет --bg каждой темы.
+const BG = { light: '#F1F2F7', dark: '#0C0E1C' } as const
+
+/**
+ * Применяет тему к <html data-theme>. Фирменная палитра «Электрик» —
+ * фиксированная, поэтому theme params клиента НЕ переопределяют токены
+ * (иначе Telegram затрёт чернильно-синий фон). Из Telegram берём только
+ * colorScheme (light/dark), чтобы выбрать наш набор токенов.
+ */
 function applyTheme(tg: TelegramWebApp) {
   const scheme = tg.colorScheme ?? 'light'
   document.documentElement.setAttribute('data-theme', scheme)
 
-  const p = tg.themeParams ?? {}
-  const root = document.documentElement.style
-  if (p.bg_color) root.setProperty('--surface', p.bg_color)
-  if (p.secondary_bg_color) root.setProperty('--surface-2', p.secondary_bg_color)
-  if (p.text_color) root.setProperty('--ink', p.text_color)
-  if (p.hint_color) root.setProperty('--ink-muted', p.hint_color)
-
   // Красим шапку и фон клиента под наш экран.
-  const headerColor = p.secondary_bg_color || (scheme === 'dark' ? '#17181c' : '#f4f5f7')
+  const bg = BG[scheme]
   try {
-    tg.setHeaderColor(headerColor)
-    tg.setBackgroundColor(p.secondary_bg_color || (scheme === 'dark' ? '#17181c' : '#f4f5f7'))
+    tg.setHeaderColor(bg)
+    tg.setBackgroundColor(bg)
   } catch {
     /* старые версии клиента могут не поддерживать — не критично */
   }
@@ -83,7 +84,15 @@ export function useMainButton(
     const tg = getTG()
     if (!tg) return
     const btn = tg.MainButton
-    btn.setParams({ text, is_active: active, is_visible: visible })
+    // Цвет кнопки — акцент текущей темы (dark: лайм, light: индиго).
+    const dark = document.documentElement.dataset.theme === 'dark'
+    btn.setParams({
+      text,
+      is_active: active,
+      is_visible: visible,
+      color: dark ? '#C6F245' : '#5A48E8',
+      text_color: dark ? '#0C0E1C' : '#FFFFFF',
+    })
     if (visible) btn.show()
     else btn.hide()
     active ? btn.enable() : btn.disable()

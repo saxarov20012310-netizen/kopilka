@@ -1,22 +1,23 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useStore } from '../store/store'
-import { useMainButton, useBackButton, haptic, alertNative } from '../hooks/useTelegram'
+import { useMainButton, useBackButton, haptic, alertNative, isTelegram } from '../hooks/useTelegram'
 import { Segmented } from '../components/Segmented'
 import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDay } from '../utils/date'
+import { CategoryIcon, type IconName } from '../components/icons'
 import type { TxKind, IncomeSource, ExpenseCategory } from '../types/models'
 
-const INCOME_SOURCES: { value: IncomeSource; label: string; emoji: string }[] = [
-  { value: 'salary', label: 'Зарплата', emoji: '💼' },
-  { value: 'advance', label: 'Аванс', emoji: '📅' },
-  { value: 'tips', label: 'Чаевые', emoji: '🪙' },
-  { value: 'other', label: 'Другое', emoji: '✳️' },
+const INCOME_SOURCES: { value: IncomeSource; label: string; icon: IconName }[] = [
+  { value: 'salary', label: 'Зарплата', icon: 'salary' },
+  { value: 'advance', label: 'Аванс', icon: 'advance' },
+  { value: 'tips', label: 'Чаевые', icon: 'tips' },
+  { value: 'other', label: 'Другое', icon: 'other' },
 ]
 
-const EXPENSE_CATS: { value: ExpenseCategory; label: string; emoji: string }[] = [
-  { value: 'spending', label: 'Трата', emoji: '🛍️' },
-  { value: 'goal', label: 'Из копилки', emoji: '🎯' },
-  { value: 'other', label: 'Другое', emoji: '✳️' },
+const EXPENSE_CATS: { value: ExpenseCategory; label: string; icon: IconName }[] = [
+  { value: 'spending', label: 'Трата', icon: 'spending' },
+  { value: 'goal', label: 'Из копилки', icon: 'goal' },
+  { value: 'other', label: 'Другое', icon: 'other' },
 ]
 
 const QUICK = [500, 1000, 3000, 5000]
@@ -79,9 +80,23 @@ export function AddTransaction({
 
   return (
     <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 12px)' }}>
-      <h1 className="mb-4 text-2xl font-bold">
-        {kind === 'income' ? 'Добавить поступление' : 'Добавить расход'}
-      </h1>
+      <div className="mb-4 flex items-center gap-2">
+        {/* Вне Telegram нет системной Back Button — рисуем свою */}
+        {!isTelegram() && (
+          <button
+            onClick={onClose}
+            aria-label="Назад"
+            className="press -ml-1 grid h-9 w-9 place-items-center rounded-full text-muted"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+        )}
+        <h1 className="text-[19px] font-bold">
+          {kind === 'income' ? 'Добавить поступление' : 'Добавить расход'}
+        </h1>
+      </div>
 
       <Segmented
         options={[
@@ -96,8 +111,8 @@ export function AddTransaction({
       />
 
       {/* Сумма */}
-      <div className="mt-5 rounded-3xl border border-hairline bg-surface p-5 shadow-card">
-        <label className="text-[13px] text-ink-muted">Сумма</label>
+      <div className="mt-5 rounded-lg2 border border-line bg-surface p-5 shadow-card">
+        <label className="text-[13px] text-muted">Сумма</label>
         <div className="mt-1 flex items-baseline gap-2">
           <input
             inputMode="numeric"
@@ -105,9 +120,11 @@ export function AddTransaction({
             value={amountRaw}
             onChange={(e) => setAmountRaw(e.target.value.replace(/[^\d\s.,]/g, ''))}
             placeholder="0"
-            className="w-full bg-transparent text-4xl font-bold tabular outline-none placeholder:text-ink-muted/40"
+            className={`w-full bg-transparent font-display text-[34px] font-semibold tabular outline-none placeholder:text-muted/40 ${
+              kind === 'expense' ? 'text-expense caret-expense' : 'text-ink caret-accent'
+            }`}
           />
-          <span className="text-3xl font-bold text-ink-muted">₽</span>
+          <span className="text-3xl font-bold text-muted">₽</span>
         </div>
         {touched && !valid && (
           <div className="mt-1 text-xs text-red-500">Введите сумму больше нуля</div>
@@ -141,13 +158,14 @@ export function AddTransaction({
                   haptic.select()
                   setCategory(c.value)
                 }}
-                className={`press rounded-full border px-4 py-2 text-sm font-medium ${
+                className={`press flex items-center gap-1.5 rounded-pill border px-4 py-2 text-sm font-medium ${
                   active
-                    ? 'border-brand-500 bg-brand-500 text-white'
-                    : 'border-hairline bg-surface-2 text-ink'
+                    ? 'border-accent bg-accent text-onaccent'
+                    : 'border-line bg-surface2 text-ink'
                 }`}
               >
-                {c.emoji} {c.label}
+                <CategoryIcon name={c.icon} size={15} />
+                {c.label}
               </button>
             )
           })}
@@ -182,6 +200,22 @@ export function AddTransaction({
       <p className="mt-3 px-1 text-center text-xs text-ink-muted">
         {date === todayISO() ? 'Сегодня' : formatDay(date)} · сумма учитывается в накоплениях
       </p>
+
+      {/* Вне Telegram нет MainButton — кнопка подтверждения в контенте */}
+      {!isTelegram() && (
+        <button
+          onClick={submit}
+          className={`press mt-4 w-full rounded-card py-3.5 text-[15px] font-semibold shadow-float ${
+            valid ? 'bg-accent text-onaccent' : 'bg-surface2 text-muted'
+          }`}
+        >
+          {valid
+            ? `Добавить ${formatRub(amount)}`
+            : kind === 'income'
+              ? 'Добавить поступление'
+              : 'Добавить расход'}
+        </button>
+      )}
     </div>
   )
 }
