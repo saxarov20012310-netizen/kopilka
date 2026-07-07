@@ -27,7 +27,8 @@ const FORM_STEP = SLIDES.length
 export function Onboarding({ onDone }: { onDone: () => void }) {
   const { state, dispatch } = useStore()
   const [i, setI] = useState(0)
-  const [income, setIncome] = useState(String(state.settings.monthlyIncome))
+  const [salaryAmt, setSalaryAmt] = useState(String(state.settings.salaryAmount))
+  const [advanceAmt, setAdvanceAmt] = useState(String(state.settings.advanceAmount))
   const [shifts, setShifts] = useState(String(state.settings.shiftsPerMonth))
   const [tips, setTips] = useState(String(state.settings.tipsPerShift))
 
@@ -37,7 +38,8 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     dispatch({
       type: 'SET_SETTINGS',
       settings: {
-        monthlyIncome: parseAmount(income) || state.settings.monthlyIncome,
+        salaryAmount: parseAmount(salaryAmt) || state.settings.salaryAmount,
+        advanceAmount: parseAmount(advanceAmt) || state.settings.advanceAmount,
         shiftsPerMonth: Number(shifts) || 0,
         tipsPerShift: parseAmount(tips) || 0,
       },
@@ -71,17 +73,30 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           </p>
 
           <div className="animate-pop-in mt-6 space-y-2.5">
-            <FormCard label="Оклад в месяц (зарплата + аванс)">
-              <div className="flex items-baseline gap-1">
-                <input
-                  inputMode="numeric"
-                  value={income}
-                  onChange={(e) => setIncome(e.target.value.replace(/[^\d\s]/g, ''))}
-                  className="w-full bg-transparent text-[16px] font-bold tabular text-ink outline-none"
-                />
-                <span className="text-[13px] text-muted">₽</span>
-              </div>
-            </FormCard>
+            <div className="grid grid-cols-2 gap-2.5">
+              <FormCard label="Зарплата, ≈">
+                <div className="flex items-baseline gap-1">
+                  <input
+                    inputMode="numeric"
+                    value={salaryAmt}
+                    onChange={(e) => setSalaryAmt(e.target.value.replace(/[^\d\s]/g, ''))}
+                    className="w-full bg-transparent text-[16px] font-bold tabular text-ink outline-none"
+                  />
+                  <span className="text-[13px] text-muted">₽</span>
+                </div>
+              </FormCard>
+              <FormCard label="Аванс, ≈">
+                <div className="flex items-baseline gap-1">
+                  <input
+                    inputMode="numeric"
+                    value={advanceAmt}
+                    onChange={(e) => setAdvanceAmt(e.target.value.replace(/[^\d\s]/g, ''))}
+                    className="w-full bg-transparent text-[16px] font-bold tabular text-ink outline-none"
+                  />
+                  <span className="text-[13px] text-muted">₽</span>
+                </div>
+              </FormCard>
+            </div>
             <div className="grid grid-cols-2 gap-2.5">
               <FormCard label="Смен в месяц">
                 <input

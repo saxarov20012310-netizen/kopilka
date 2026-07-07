@@ -23,7 +23,9 @@ export const DEFAULT_STATE: AppState = {
     startDate: todayISO(),
   },
   settings: {
-    monthlyIncome: 100_000,
+    // Реальная структура дохода: небольшой оклад, основное — чаевые.
+    salaryAmount: 25_000,
+    advanceAmount: 12_000,
     salaryDay: 5,
     advanceDay: 20,
     savingRate: 0.4,

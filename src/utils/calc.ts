@@ -148,13 +148,9 @@ function countPaydays(day: number, fromISO: string, toISO: string): number {
  */
 export function calcStrategy(state: AppState): Strategy {
   const { remaining, daysLeft } = calcProgress(state)
-  const { monthlyIncome, salaryDay, advanceDay, savingRate, shiftsPerMonth, tipsPerShift } =
+  const { salaryAmount, advanceAmount, salaryDay, advanceDay, savingRate, shiftsPerMonth, tipsPerShift } =
     state.settings
   const today = todayISO()
-
-  // Оценка выплат: зарплата ~55% месячного дохода, аванс ~45% (типичная схема).
-  const salaryAmount = Math.round(monthlyIncome * 0.55)
-  const advanceAmount = Math.round(monthlyIncome * 0.45)
 
   const horizon = Math.max(0, daysLeft)
   const salaries = countPaydays(salaryDay, today, state.goal.deadline)

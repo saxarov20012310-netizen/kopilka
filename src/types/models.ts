@@ -33,8 +33,10 @@ export interface Goal {
 }
 
 export interface Settings {
-  /** Ожидаемый месячный доход (зарплата+аванс, без чаевых), ₽. */
-  monthlyIncome: number
+  /** Примерная зарплата (выплата в день зарплаты), ₽. */
+  salaryAmount: number
+  /** Примерный аванс, ₽. */
+  advanceAmount: number
   /** День зарплаты. */
   salaryDay: number
   /** День аванса. */

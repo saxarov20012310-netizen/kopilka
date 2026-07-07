@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { useStore } from '../store/store'
 import { useBackButton, haptic, alertNative, isTelegram } from '../hooks/useTelegram'
 import { Segmented } from '../components/Segmented'
-import { parseAmount, formatRub } from '../utils/format'
+import { parseAmount } from '../utils/format'
 import { todayISO, formatDay } from '../utils/date'
 import { CategoryIcon, type IconName } from '../components/icons'
 import type { TxKind, IncomeSource, ExpenseCategory } from '../types/models'
@@ -203,11 +203,7 @@ export function AddTransaction({
           valid ? 'bg-accent text-onaccent' : 'bg-surface2 text-muted'
         }`}
       >
-        {valid
-          ? `Добавить ${formatRub(amount)}`
-          : kind === 'income'
-            ? 'Добавить поступление'
-            : 'Добавить расход'}
+        Добавить
       </button>
     </div>
   )

@@ -13,6 +13,13 @@ export function isTelegram(): boolean {
   return !!tg && !!tg.initData
 }
 
+/** Telegram id текущего пользователя (null вне Telegram). */
+export function getTelegramUserId(): number | null {
+  const tg = getTG()
+  const user = tg?.initDataUnsafe?.user as { id?: number } | undefined
+  return typeof user?.id === 'number' ? user.id : null
+}
+
 // Фон экрана в фирменной палитре «Электрик» — под цвет --bg каждой темы.
 const BG = { light: '#F1F2F7', dark: '#0C0E1C' } as const
 

@@ -1,22 +1,52 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store/store'
 import { Card } from '../components/Card'
-import { haptic, confirmNative, alertNative } from '../hooks/useTelegram'
+import { haptic, confirmNative, alertNative, getTelegramUserId } from '../hooks/useTelegram'
 import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDayYear, daysBetween } from '../utils/date'
 import { calcStrategy } from '../utils/calc'
+import { fetchSkazkaSummary, type SkazkaSummary } from '../utils/skazka'
 
 export function Settings() {
   const { state, dispatch } = useStore()
   const [title, setTitle] = useState(state.goal.title)
   const [target, setTarget] = useState(String(state.goal.target))
   const [deadline, setDeadline] = useState(state.goal.deadline)
-  const [income, setIncome] = useState(String(state.settings.monthlyIncome))
+  const [salaryAmt, setSalaryAmt] = useState(String(state.settings.salaryAmount))
+  const [advanceAmt, setAdvanceAmt] = useState(String(state.settings.advanceAmount))
   const [salaryDay, setSalaryDay] = useState(String(state.settings.salaryDay))
   const [advanceDay, setAdvanceDay] = useState(String(state.settings.advanceDay))
   const [shifts, setShifts] = useState(String(state.settings.shiftsPerMonth))
   const [tips, setTips] = useState(String(state.settings.tipsPerShift))
   const [rate, setRate] = useState(state.settings.savingRate)
+  const [syncing, setSyncing] = useState(false)
+  const [synced, setSynced] = useState<SkazkaSummary | null>(null)
+
+  // Подтянуть фактический ритм из skazka: смены и средний чай за 30 дней.
+  // Заполняет поля формы — сохранение обычной кнопкой «Сохранить».
+  const syncSkazka = async () => {
+    const uid = getTelegramUserId()
+    if (!uid) {
+      await alertNative('Синхронизация работает только внутри Telegram')
+      return
+    }
+    setSyncing(true)
+    const s = await fetchSkazkaSummary(uid)
+    setSyncing(false)
+    if (!s) {
+      haptic.warning()
+      await alertNative('Не удалось получить данные из skazka. Попробуйте позже.')
+      return
+    }
+    if (s.shifts === 0) {
+      await alertNative('В skazka нет смен за последние 30 дней — нечего подтягивать.')
+      return
+    }
+    setShifts(String(s.shiftsPerMonth))
+    setTips(String(s.avgTips))
+    setSynced(s)
+    haptic.success()
+  }
 
   const targetNum = parseAmount(target)
   const daysLeft = daysBetween(todayISO(), deadline)
@@ -39,13 +69,14 @@ export function Settings() {
       title.trim() !== state.goal.title ||
       targetNum !== state.goal.target ||
       deadline !== state.goal.deadline ||
-      parseAmount(income) !== state.settings.monthlyIncome ||
+      parseAmount(salaryAmt) !== state.settings.salaryAmount ||
+      parseAmount(advanceAmt) !== state.settings.advanceAmount ||
       Number(salaryDay) !== state.settings.salaryDay ||
       Number(advanceDay) !== state.settings.advanceDay ||
       Number(shifts) !== state.settings.shiftsPerMonth ||
       parseAmount(tips) !== state.settings.tipsPerShift ||
       rate !== state.settings.savingRate,
-    [title, targetNum, deadline, income, salaryDay, advanceDay, shifts, tips, rate, state]
+    [title, targetNum, deadline, salaryAmt, advanceAmt, salaryDay, advanceDay, shifts, tips, rate, state]
   )
 
   // Живая стратегия: пересчитывается прямо при вводе, ещё до сохранения.
@@ -59,7 +90,8 @@ export function Settings() {
       },
       settings: {
         ...state.settings,
-        monthlyIncome: parseAmount(income) || state.settings.monthlyIncome,
+        salaryAmount: parseAmount(salaryAmt) || 0,
+        advanceAmount: parseAmount(advanceAmt) || 0,
         salaryDay: Number(salaryDay) || state.settings.salaryDay,
         advanceDay: Number(advanceDay) || state.settings.advanceDay,
         shiftsPerMonth: Number(shifts) || 0,
@@ -68,7 +100,7 @@ export function Settings() {
       },
     }
     return calcStrategy(tmp)
-  }, [state, targetNum, deadline, daysLeft, income, salaryDay, advanceDay, shifts, tips, rate])
+  }, [state, targetNum, deadline, daysLeft, salaryAmt, advanceAmt, salaryDay, advanceDay, shifts, tips, rate])
 
   const save = async () => {
     if (!valid) {
@@ -87,7 +119,8 @@ export function Settings() {
     dispatch({
       type: 'SET_SETTINGS',
       settings: {
-        monthlyIncome: parseAmount(income),
+        salaryAmount: parseAmount(salaryAmt) || 0,
+        advanceAmount: parseAmount(advanceAmt) || 0,
         salaryDay: Number(salaryDay),
         advanceDay: Number(advanceDay),
         shiftsPerMonth: Number(shifts) || 0,
@@ -112,7 +145,8 @@ export function Settings() {
     ? Math.round(Math.min(1, liveStrategy.requiredShare) * 100)
     : 100
   const perMonthSaving = Math.round(
-    (parseAmount(income) + (Number(shifts) || 0) * parseAmount(tips)) * rate
+    (parseAmount(salaryAmt) + parseAmount(advanceAmt) + (Number(shifts) || 0) * parseAmount(tips)) *
+      rate
   )
   // Прогресс заливки трека слайдера (диапазон 10–80%).
   const sliderVal = `${((ratePct - 10) / (80 - 10)) * 100}%`
@@ -165,21 +199,36 @@ export function Settings() {
           : 'Укажите сумму и дату в будущем'}
       </p>
 
-      {/* Доход */}
-      <h2 className="mb-2 mt-4 px-1 text-[15px] font-bold">Доход</h2>
-      <Card className="px-4 py-3.5">
-        <FieldCol label="Оклад в месяц (зарплата + аванс)">
-          <div className="flex items-baseline gap-1">
-            <input
-              inputMode="numeric"
-              value={income}
-              onChange={(e) => setIncome(e.target.value.replace(/[^\d\s]/g, ''))}
-              className="w-full bg-transparent text-[15px] font-bold tabular text-ink outline-none"
-            />
-            <span className="text-[13px] text-muted">₽</span>
-          </div>
-        </FieldCol>
-      </Card>
+      {/* Доход: зарплата и аванс — отдельными суммами (основной доход — чаевые) */}
+      <h2 className="mb-2 mt-4 px-1 text-[15px] font-bold">Выплаты</h2>
+      <div className="grid grid-cols-2 gap-2.5">
+        <Card className="px-4 py-3.5">
+          <FieldCol label="Зарплата, ≈">
+            <div className="flex items-baseline gap-1">
+              <input
+                inputMode="numeric"
+                value={salaryAmt}
+                onChange={(e) => setSalaryAmt(e.target.value.replace(/[^\d\s]/g, ''))}
+                className="w-full bg-transparent text-[15px] font-bold tabular text-ink outline-none"
+              />
+              <span className="text-[13px] text-muted">₽</span>
+            </div>
+          </FieldCol>
+        </Card>
+        <Card className="px-4 py-3.5">
+          <FieldCol label="Аванс, ≈">
+            <div className="flex items-baseline gap-1">
+              <input
+                inputMode="numeric"
+                value={advanceAmt}
+                onChange={(e) => setAdvanceAmt(e.target.value.replace(/[^\d\s]/g, ''))}
+                className="w-full bg-transparent text-[15px] font-bold tabular text-ink outline-none"
+              />
+              <span className="text-[13px] text-muted">₽</span>
+            </div>
+          </FieldCol>
+        </Card>
+      </div>
       <div className="mt-2.5 grid grid-cols-2 gap-2.5">
         <Card className="px-4 py-3.5">
           <FieldCol label="День зарплаты">
@@ -231,6 +280,22 @@ export function Settings() {
         </Card>
       </div>
 
+      {/* Синхронизация со skazka: реальные смены и чай вместо ручных оценок */}
+      <button
+        onClick={syncSkazka}
+        disabled={syncing}
+        className="press mt-2.5 w-full rounded-card border border-accent/30 bg-accent-soft py-3 text-[14px] font-semibold text-accent disabled:opacity-60"
+      >
+        {syncing ? 'Загружаю из skazka…' : '⟳ Подтянуть из skazka (смены и чай)'}
+      </button>
+      {synced && (
+        <p className="mt-1.5 px-2 text-[12px] text-muted">
+          По данным skazka за {synced.days} дн.: {synced.shifts} смен · чай всего{' '}
+          {formatRub(synced.tipsTotal)} · в среднем {formatRub(synced.avgTips)}/смена. Проверьте и
+          нажмите «Сохранить».
+        </p>
+      )}
+
       {/* Норма откладывания — фирменная тёмная карта с лаймовым слайдером */}
       <section className="mt-4 rounded-lg2 bg-inverse p-5">
         <div className="flex items-center justify-between">
@@ -253,7 +318,7 @@ export function Settings() {
         </div>
         <div className="mt-3 space-y-1 border-t border-white/[0.06] pt-3 text-[12.5px] text-[#83869E]">
           <div>
-            ≈ <b className="tabular text-lime">{formatRub(perMonthSaving)}</b> в месяц (оклад + чаевые)
+            ≈ <b className="tabular text-lime">{formatRub(perMonthSaving)}</b> в месяц (выплаты + чаевые)
           </div>
           {/* Живая сверка нормы со стратегией цели */}
           <div>
