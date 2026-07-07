@@ -19,6 +19,8 @@ export interface Transaction {
   /** Учитывается ли в накоплениях (для income по умолчанию true). */
   counts: boolean
   createdAt: number
+  /** id смены из skazka, если операция создана автосинхронизацией (для идемпотентности). */
+  skazkaId?: number
 }
 
 export interface Goal {

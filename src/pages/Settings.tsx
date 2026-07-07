@@ -22,8 +22,9 @@ export function Settings() {
   const [syncing, setSyncing] = useState(false)
   const [synced, setSynced] = useState<SkazkaSummary | null>(null)
 
-  // Подтянуть фактический ритм из skazka: смены и средний чай за 30 дней.
-  // Заполняет поля формы — сохранение обычной кнопкой «Сохранить».
+  // Ручное обновление из skazka: приложение и так синхронизируется само при
+  // открытии — эта кнопка для «прямо сейчас». Обновляет ритм и импортирует
+  // новые смены месяца (идемпотентно, повтор ничего не задвоит).
   const syncSkazka = async () => {
     const uid = getTelegramUserId()
     if (!uid) {
@@ -42,8 +43,13 @@ export function Settings() {
       await alertNative('В skazka нет смен за последние 30 дней — нечего подтягивать.')
       return
     }
+    dispatch({ type: 'IMPORT_SHIFTS', shifts: s.monthShifts, rate })
     setShifts(String(s.shiftsPerMonth))
     setTips(String(s.avgTips))
+    dispatch({
+      type: 'SET_SETTINGS',
+      settings: { shiftsPerMonth: s.shiftsPerMonth, tipsPerShift: s.avgTips },
+    })
     setSynced(s)
     haptic.success()
   }
@@ -252,8 +258,11 @@ export function Settings() {
         </Card>
       </div>
 
-      {/* Смены и чаевые — вторая часть дохода */}
-      <h2 className="mb-2 mt-4 px-1 text-[15px] font-bold">Смены и чаевые</h2>
+      {/* Смены и чаевые — вторая часть дохода. Синхронизируются из skazka автоматически. */}
+      <div className="mb-2 mt-4 flex items-center justify-between px-1">
+        <h2 className="text-[15px] font-bold">Смены и чаевые</h2>
+        <span className="text-[11.5px] text-muted">обновляется из skazka</span>
+      </div>
       <div className="grid grid-cols-2 gap-2.5">
         <Card className="px-4 py-3.5">
           <FieldCol label="Смен в месяц">
@@ -280,19 +289,19 @@ export function Settings() {
         </Card>
       </div>
 
-      {/* Синхронизация со skazka: реальные смены и чай вместо ручных оценок */}
+      {/* Ручное обновление «прямо сейчас» — автосинк и так идёт при открытии */}
       <button
         onClick={syncSkazka}
         disabled={syncing}
         className="press mt-2.5 w-full rounded-card border border-accent/30 bg-accent-soft py-3 text-[14px] font-semibold text-accent disabled:opacity-60"
       >
-        {syncing ? 'Загружаю из skazka…' : '⟳ Подтянуть из skazka (смены и чай)'}
+        {syncing ? 'Обновляю из skazka…' : '⟳ Обновить из skazka сейчас'}
       </button>
       {synced && (
         <p className="mt-1.5 px-2 text-[12px] text-muted">
-          По данным skazka за {synced.days} дн.: {synced.shifts} смен · чай всего{' '}
-          {formatRub(synced.tipsTotal)} · в среднем {formatRub(synced.avgTips)}/смена. Проверьте и
-          нажмите «Сохранить».
+          skazka за {synced.days} дн.: {synced.shifts} смен · в среднем{' '}
+          {formatRub(synced.avgTips)}/смена. В этом месяце — {synced.monthShifts.length} смен на{' '}
+          {formatRub(synced.monthTips)} чая, отложено по норме {ratePct}%.
         </p>
       )}
 
