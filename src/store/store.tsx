@@ -32,6 +32,7 @@ type Action =
   | { type: 'SET_SETTINGS'; settings: Partial<Settings> }
   | { type: 'SET_ONBOARDED'; value: boolean }
   | { type: 'SET_SKAZKA'; snapshot: SkazkaSnapshot }
+  | { type: 'SET_CELEBRATED'; pct: number }
   | { type: 'HYDRATE'; state: AppState }
   | { type: 'RESET' }
 
@@ -66,6 +67,8 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SET_SKAZKA':
       // Снимок заработка из skazka: смены и чай — отдельно от отложенного.
       return { ...state, skazka: action.snapshot }
+    case 'SET_CELEBRATED':
+      return { ...state, celebratedPct: action.pct }
     case 'HYDRATE':
       return action.state
     case 'RESET':

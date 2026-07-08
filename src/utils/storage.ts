@@ -35,6 +35,7 @@ export const DEFAULT_STATE: AppState = {
   transactions: [],
   onboarded: false,
   skazka: null,
+  celebratedPct: 0,
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
@@ -54,6 +55,7 @@ function mergeDefaults(parsed: Partial<AppState>): AppState {
     // но пользователь их не откладывал — заработок теперь живёт отдельно.
     transactions: (parsed.transactions ?? []).filter((t) => t.skazkaId == null),
     skazka: parsed.skazka ?? null,
+    celebratedPct: parsed.celebratedPct ?? 0,
   }
 }
 

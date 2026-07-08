@@ -6,7 +6,7 @@ import { StatTile } from '../components/StatTile'
 import { Motivation } from '../components/Motivation'
 import { Card } from '../components/Card'
 import { formatRub, formatCompact, daysWord } from '../utils/format'
-import { formatDay } from '../utils/date'
+import { formatDay, formatMonthYear } from '../utils/date'
 import { haptic } from '../hooks/useTelegram'
 import { CategoryIcon } from '../components/icons'
 import type { OpenAdd } from '../App'
@@ -18,6 +18,8 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
   const upcoming = useMemo(() => calcUpcoming(state), [state])
 
   const deadlineTxt = formatDay(state.goal.deadline)
+  // Цель на грани/недостижима — честно показываем реальный срок.
+  const goalTight = strategy.verdict === 'tight' || strategy.verdict === 'unreal'
 
   return (
     <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
@@ -72,6 +74,31 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
           </span>
         </div>
       </section>
+
+      {/* Честность про достижимость: реальный срок при текущей норме */}
+      {goalTight && strategy.realisticDate && (
+        <div
+          className="rise mt-2.5 flex items-start gap-2.5 rounded-card border border-expense/25 bg-expense/[0.08] p-3.5"
+          style={{ animationDelay: '30ms' }}
+        >
+          <span className="mt-0.5 text-[15px]">⚠️</span>
+          <span className="min-w-0 flex-1 text-[12.5px] leading-snug text-ink">
+            {strategy.verdict === 'unreal' ? (
+              <>
+                К этому сроку не успеть даже откладывая всё. Реальный срок —{' '}
+                <b className="text-expense">{formatMonthYear(strategy.realisticDate)}</b>.
+              </>
+            ) : (
+              <>
+                Реальный срок при норме {Math.round(state.settings.savingRate * 100)}% —{' '}
+                <b className="text-expense">{formatMonthYear(strategy.realisticDate)}</b>, а не{' '}
+                {deadlineTxt}.
+              </>
+            )}{' '}
+            <span className="text-muted">Подвинь дедлайн или сумму во вкладке «Цель».</span>
+          </span>
+        </div>
+      )}
 
       {/* Стратегия: сколько отложить с каждого типа поступления */}
       <div className="rise mt-3.5" style={{ animationDelay: '60ms' }}>

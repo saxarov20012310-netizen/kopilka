@@ -4,8 +4,8 @@ import { TransactionRow } from '../components/TransactionRow'
 import { Card } from '../components/Card'
 import { Segmented } from '../components/Segmented'
 import { confirmNative, haptic } from '../hooks/useTelegram'
-import { formatRub } from '../utils/format'
-import { formatDay, todayISO, monthNamePrep } from '../utils/date'
+import { formatRub, daysWord } from '../utils/format'
+import { formatDay, todayISO, monthNamePrep, fromISO } from '../utils/date'
 import { affectsSavings, calcMonthEarnings } from '../utils/calc'
 import { CategoryIcon } from '../components/icons'
 import type { Transaction, TxKind } from '../types/models'
@@ -42,6 +42,11 @@ export function Transactions({ onAdd }: { onAdd: OpenAdd }) {
   if (mode === 'earnings') {
     const mon = monthNamePrep(todayISO())
     const savedPct = Math.round(earnings.savedShare * 100)
+    // Дней до конца месяца и сколько свободно тратить в день.
+    const now = fromISO(todayISO())
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const daysLeftInMonth = lastDay - now.getDate() + 1
+    const perDayFree = earnings.free > 0 ? Math.floor(earnings.free / daysLeftInMonth) : 0
     return (
       <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
         <h1 className="mb-3 text-[19px] font-bold">История</h1>
@@ -85,11 +90,18 @@ export function Transactions({ onAdd }: { onAdd: OpenAdd }) {
               </div>
             </div>
           </div>
-          <div className="mt-3 text-[11.5px] text-[#83869E]">
-            {earnings.expected > 0 && <>Ещё придёт {formatRub(earnings.expected)} · </>}
-            {earnings.free < 0
-              ? 'потрачено больше, чем на руках — загляни в расходы'
-              : 'свободно = получено − отложено − потрачено'}
+          <div className="mt-3 text-[11.5px] leading-snug text-[#83869E]">
+            {earnings.expected > 0 && <>Ещё придёт {formatRub(earnings.expected)}. </>}
+            {earnings.free < 0 ? (
+              <span className="text-[#FF7A85]">
+                Потрачено больше, чем свободно — сократи траты или доложи меньше.
+              </span>
+            ) : (
+              <>
+                Осталось {daysLeftInMonth} {daysWord(daysLeftInMonth)} месяца — это можно тратить по{' '}
+                <b className="text-[#EFF0FA]">≈ {formatRub(perDayFree)}/день</b> без ущерба копилке.
+              </>
+            )}
           </div>
         </section>
 

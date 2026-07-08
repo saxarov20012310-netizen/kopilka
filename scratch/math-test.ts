@@ -15,6 +15,7 @@ const state: AppState = {
     { id: 'b', kind: 'expense', amount: 500, date: '2026-07-07', category: 'spending', counts: true, createdAt: 2 },
   ],
   onboarded: true,
+  celebratedPct: 0,
   skazka: {
     fetchedAt: 0, shiftsPerMonth: 18, avgTips: 2_900,
     monthShifts: [
@@ -65,3 +66,15 @@ assert('зарплата за июль → 5 августа', e.items.some(i => 
 assert('стратегия конечна', Number.isFinite(s.requiredShare) && s.requiredShare > 0)
 assert('осталось = цель − отложено', p.remaining === 464_000 - 2_000)
 console.log('\nALL MATH OK ✓')
+
+// Прогноз реального срока
+import { addMonths, formatMonthYear, todayISO } from '../src/utils/date'
+console.log('\n— прогноз срока:')
+console.log('  вердикт:', s.verdict, '| в месяц реально:', s.monthlyAchievable, '| реальный срок:', s.realisticDate, s.realisticDate && '('+formatMonthYear(s.realisticDate)+')')
+// monthlyAchievable = (25000+12000+18*2900)*0.4 = 89200*0.4 = 35680
+assert('monthlyAchievable = 35680', s.monthlyAchievable === Math.round((25000+12000+18*2900)*0.4))
+// realisticDate = today + ceil((464000−2000)/35680) = ceil(12.95) = 13 мес
+assert('realisticDate = today+13мес', s.realisticDate === addMonths(todayISO(), Math.ceil((464000-2000)/35680)))
+// цель на грани при норме 40% — вердикт tight (нужно ~83% > 40%)
+assert('вердикт tight', s.verdict === 'tight')
+console.log('\nALL PROJECTION OK ✓')

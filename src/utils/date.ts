@@ -48,6 +48,23 @@ export function addDays(iso: string, n: number): string {
   return toISO(d)
 }
 
+export function addMonths(iso: string, n: number): string {
+  const d = fromISO(iso)
+  const day = d.getDate()
+  d.setDate(1)
+  d.setMonth(d.getMonth() + n)
+  // Кламп к длине целевого месяца (31 янв + 1 мес → 28/29 фев, не 3 марта).
+  const dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  d.setDate(Math.min(day, dim))
+  return toISO(d)
+}
+
+/** «январь 2027» — месяц и год (для прогноза срока). */
+export function formatMonthYear(iso: string): string {
+  const d = fromISO(iso)
+  return `${MONTHS_NOM[d.getMonth()]} ${d.getFullYear()}`
+}
+
 /**
  * Ближайшая дата с заданным днём месяца, не раньше fromISO.
  * Если день уже прошёл в этом месяце — берём следующий месяц.

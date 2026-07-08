@@ -75,4 +75,6 @@ export interface AppState {
   onboarded: boolean
   /** Последние данные заработка из skazka (null — ещё не синхронизировались). */
   skazka: SkazkaSnapshot | null
+  /** Наибольшая веха прогресса (25/50/75/100%), которую уже отпраздновали. */
+  celebratedPct: number
 }

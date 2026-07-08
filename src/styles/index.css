@@ -106,6 +106,18 @@ a:hover {
   animation: rise 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+/* Празднование вехи */
+@keyframes celebratePop {
+  0% { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  60% { transform: scale(1.15) rotate(3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes spark {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rise,
   .page-enter {

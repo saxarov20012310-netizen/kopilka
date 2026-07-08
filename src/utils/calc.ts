@@ -1,6 +1,6 @@
 // Централизованные расчёты накоплений. Здесь вся математика приложения.
 import type { AppState, Transaction, IncomeSource } from '../types/models'
-import { daysBetween, todayISO, nextPayday, addDays, paydayInMonth, monthNameNom } from './date'
+import { daysBetween, todayISO, nextPayday, addDays, addMonths, paydayInMonth, monthNameNom } from './date'
 
 export interface Progress {
   saved: number
@@ -254,6 +254,10 @@ export interface Strategy {
   spent30: number
   /** Реалистичность цели при текущем ритме работы. */
   verdict: 'done' | 'easy' | 'fits' | 'tight' | 'unreal'
+  /** Сколько реально можно откладывать в месяц при текущей норме, ₽. */
+  monthlyAchievable: number
+  /** Прогноз даты достижения цели при текущей норме (ISO). null — норма 0. */
+  realisticDate: string | null
 }
 
 /** Сколько раз день месяца (зарплата/аванс) встретится в интервале (from, to]. */
@@ -315,6 +319,14 @@ export function calcStrategy(state: AppState): Strategy {
   else if (requiredShare > savingRate * 0.6) verdict = 'fits'
   else verdict = 'easy'
 
+  // Реальный темп: сколько откладываем в месяц при текущей норме → прогноз даты.
+  const monthlyIncomeTotal = salaryAmount + advanceAmount + shiftsPerMonth * tipsPerShift
+  const monthlyAchievable = Math.round(monthlyIncomeTotal * savingRate)
+  const realisticDate =
+    remaining > 0 && monthlyAchievable > 0
+      ? addMonths(today, Math.ceil(remaining / monthlyAchievable))
+      : null
+
   return {
     expectedInflow,
     requiredShare,
@@ -328,6 +340,8 @@ export function calcStrategy(state: AppState): Strategy {
     advanceAmount,
     spent30,
     verdict,
+    monthlyAchievable,
+    realisticDate,
   }
 }
 
