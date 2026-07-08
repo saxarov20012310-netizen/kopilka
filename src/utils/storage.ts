@@ -172,3 +172,29 @@ function saveCloud(cs: TelegramCloudStorage, state: AppState, updatedAt: number)
 export function newId(): string {
   return uid()
 }
+
+// ───────────────────────── Экспорт / импорт ─────────────────────────
+
+/** Строка резервной копии: версия + состояние + метка времени. */
+export function exportState(state: AppState): string {
+  return JSON.stringify({ v: 2, at: Date.now(), state }, null, 0)
+}
+
+/** Разбор резервной копии. null — формат не распознан. */
+export function importState(raw: string): AppState | null {
+  try {
+    const parsed = JSON.parse(raw.trim()) as Record<string, unknown>
+    // Поддерживаем и обёртку {v,state}, и голый AppState.
+    const candidate =
+      parsed && typeof parsed === 'object' && 'state' in parsed
+        ? (parsed.state as Partial<AppState>)
+        : (parsed as Partial<AppState>)
+    if (!candidate || typeof candidate !== 'object') return null
+    // Минимальная валидация: должна быть цель с целевой суммой.
+    if (!candidate.goal || typeof (candidate.goal as { target?: unknown }).target !== 'number')
+      return null
+    return mergeDefaults(candidate)
+  } catch {
+    return null
+  }
+}

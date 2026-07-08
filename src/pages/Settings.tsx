@@ -5,6 +5,7 @@ import { haptic, confirmNative, alertNative, getTelegramUserId } from '../hooks/
 import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDayYear, daysBetween } from '../utils/date'
 import { calcStrategy } from '../utils/calc'
+import { exportState, importState } from '../utils/storage'
 import { fetchSkazkaSummary, type SkazkaSummary } from '../utils/skazka'
 
 export function Settings() {
@@ -153,6 +154,36 @@ export function Settings() {
       state.transactions.forEach((t) => dispatch({ type: 'DELETE_TX', id: t.id }))
       haptic.success()
     }
+  }
+
+  // Резервная копия: скопировать всё состояние в буфер обмена.
+  const backup = async () => {
+    const text = exportState(state)
+    try {
+      await navigator.clipboard.writeText(text)
+      haptic.success()
+      await alertNative('Резервная копия скопирована в буфер. Сохраните её (например, в «Избранное» в Telegram) — потом можно восстановить.')
+    } catch {
+      // Буфер недоступен — показываем текст для ручного копирования.
+      window.prompt('Скопируйте резервную копию:', text)
+    }
+  }
+
+  // Восстановление: вставить строку резервной копии.
+  const restore = async () => {
+    const raw = window.prompt('Вставьте строку резервной копии:')
+    if (!raw) return
+    const restored = importState(raw)
+    if (!restored) {
+      haptic.error()
+      await alertNative('Не удалось распознать резервную копию. Проверьте, что скопировали строку целиком.')
+      return
+    }
+    const ok = await confirmNative('Заменить текущие данные копией? Нынешние операции и настройки будут перезаписаны.')
+    if (!ok) return
+    dispatch({ type: 'HYDRATE', state: restored })
+    haptic.success()
+    await alertNative('Данные восстановлены из копии.')
   }
 
   const ratePct = Math.round(rate * 100)
@@ -369,11 +400,30 @@ export function Settings() {
         </button>
       )}
 
+      {/* Резервная копия данных */}
+      <h2 className="mb-2 mt-5 px-1 text-[15px] font-bold">Резервная копия</h2>
+      <div className="grid grid-cols-2 gap-2.5">
+        <button
+          onClick={backup}
+          className="press rounded-card border border-line bg-surface py-3 text-[14px] font-semibold text-ink shadow-card"
+        >
+          Сохранить копию
+        </button>
+        <button
+          onClick={restore}
+          className="press rounded-card border border-line bg-surface py-3 text-[14px] font-semibold text-ink shadow-card"
+        >
+          Восстановить
+        </button>
+      </div>
+      <p className="mt-1.5 px-1 text-[11.5px] text-muted">
+        Данные хранятся в Telegram и на устройстве. Копия — на случай переустановки: скопируй строку
+        и сохрани, например, в «Избранное».
+      </p>
+
       <button
         onClick={resetAll}
-        className={`press w-full rounded-card border border-line bg-surface py-3.5 text-[15px] font-semibold text-expense shadow-card ${
-          dirty ? 'mt-3' : 'mt-5'
-        }`}
+        className="press mt-5 w-full rounded-card border border-line bg-surface py-3.5 text-[15px] font-semibold text-expense shadow-card"
       >
         Сбросить операции
       </button>
