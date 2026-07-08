@@ -159,7 +159,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
       {/* Кнопка действия — в приложении (не системная кнопка Telegram) */}
       <button
         onClick={next}
-        className="press rounded-card bg-accent py-4 text-[16px] font-semibold text-onaccent shadow-float"
+        className="btn-grad press rounded-card py-4 text-[16px] font-semibold"
       >
         {isForm ? 'Начать копить' : 'Дальше'}
       </button>

@@ -20,24 +20,19 @@ export function getTelegramUserId(): number | null {
   return typeof user?.id === 'number' ? user.id : null
 }
 
-// Фон экрана в фирменной палитре «Электрик» — под цвет --bg каждой темы.
-const BG = { light: '#F1F2F7', dark: '#0C0E1C' } as const
+// Единый премиум-фон «Aurora» — приложение всегда тёмное, независимо от темы Telegram.
+const BG = '#08080f'
 
 /**
- * Применяет тему к <html data-theme>. Фирменная палитра «Электрик» —
- * фиксированная, поэтому theme params клиента НЕ переопределяют токены
- * (иначе Telegram затрёт чернильно-синий фон). Из Telegram берём только
- * colorScheme (light/dark), чтобы выбрать наш набор токенов.
+ * Красит шапку и подложку клиента Telegram под наш фон. Палитра фирменная и
+ * единая (тёмная), поэтому theme params клиента игнорируем — Telegram не должен
+ * затирать сине-фиолетовый фон.
  */
 function applyTheme(tg: TelegramWebApp) {
-  const scheme = tg.colorScheme ?? 'light'
-  document.documentElement.setAttribute('data-theme', scheme)
-
-  // Красим шапку и фон клиента под наш экран.
-  const bg = BG[scheme]
+  document.documentElement.setAttribute('data-theme', 'dark')
   try {
-    tg.setHeaderColor(bg)
-    tg.setBackgroundColor(bg)
+    tg.setHeaderColor(BG)
+    tg.setBackgroundColor(BG)
   } catch {
     /* старые версии клиента могут не поддерживать — не критично */
   }
@@ -78,8 +73,8 @@ export function useTelegramInit() {
     const detachKeyboard = attachKeyboardScroll()
     const tg = getTG()
     if (!tg) {
-      // Вне Telegram — светлая тема по умолчанию.
-      document.documentElement.setAttribute('data-theme', 'light')
+      // Вне Telegram — та же премиум-тёмная айдентика.
+      document.documentElement.setAttribute('data-theme', 'dark')
       return detachKeyboard
     }
     tg.ready()

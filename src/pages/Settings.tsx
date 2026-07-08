@@ -392,8 +392,8 @@ export function Settings() {
       {dirty && (
         <button
           onClick={save}
-          className={`press mt-5 w-full rounded-card py-3.5 text-[15px] font-semibold shadow-float ${
-            valid ? 'bg-accent text-onaccent' : 'bg-surface2 text-muted'
+          className={`press mt-5 w-full rounded-card py-3.5 text-[15px] font-semibold ${
+            valid ? 'btn-grad' : 'glass text-muted'
           }`}
         >
           Сохранить

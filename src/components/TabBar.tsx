@@ -54,8 +54,8 @@ export function TabBar({ active, onChange }: { active: TabKey; onChange: (t: Tab
       className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-4"
       style={{ paddingBottom: 'calc(var(--safe-bottom) + 12px)' }}
     >
-      {/* Парящая «пилюля» — оторвана от краёв, с мягкой тенью */}
-      <div className="flex w-full max-w-app items-stretch justify-around gap-1 rounded-pill border border-line bg-surface/95 px-2 py-1.5 shadow-float backdrop-blur-xl">
+      {/* Парящая стеклянная «пилюля» (единственное место с backdrop-blur) */}
+      <div className="glass-nav flex w-full max-w-app items-stretch justify-around gap-1 rounded-pill px-2 py-1.5 shadow-float">
         {TABS.map((t) => {
           const isActive = active === t.key
           return (
@@ -66,7 +66,7 @@ export function TabBar({ active, onChange }: { active: TabKey; onChange: (t: Tab
                 onChange(t.key)
               }}
               className={`relative flex flex-1 flex-col items-center gap-1 rounded-pill py-2 transition-colors ${
-                isActive ? 'bg-accent text-onaccent' : 'text-muted'
+                isActive ? 'btn-grad' : 'text-muted'
               }`}
             >
               <svg width="23" height="23" viewBox="0 0 24 24">

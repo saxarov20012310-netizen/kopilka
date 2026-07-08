@@ -34,40 +34,40 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
         </div>
       </div>
 
-      {/* Накопления — фирменная тёмная карта: кольцо слева, цифры справа */}
-      <section className="rise rounded-lg2 bg-inverse p-5">
-        <div className="flex items-center gap-5">
+      {/* Накопления — фирменная градиентная карта-герой */}
+      <section className="card-hero rise rounded-lg2 p-5">
+        <div className="relative z-10 flex items-center gap-5">
           <ProgressRing
             percent={progress.percent}
             size={112}
             stroke={10}
-            color="#C6F245"
-            track="#23264A"
+            color="#ffffff"
+            track="rgba(255,255,255,0.24)"
           >
-            <div className="font-display text-[19px] font-semibold tabular text-lime">
+            <div className="font-display text-[19px] font-semibold tabular text-white">
               {Math.round(progress.percent)}
               <span className="text-[12px]">%</span>
             </div>
           </ProgressRing>
 
           <div className="min-w-0 flex-1">
-            <div className="text-[12px] text-[#83869E]">Накоплено</div>
-            <div className="mt-0.5 font-display text-[26px] font-semibold tabular leading-tight text-[#EFF0FA]">
+            <div className="text-[12px] text-white/70">Накоплено</div>
+            <div className="mt-0.5 font-display text-[27px] font-semibold tabular leading-tight text-white">
               {formatRub(progress.saved)}
             </div>
-            <div className="mt-1.5 text-[12.5px] leading-snug text-[#83869E]">
+            <div className="mt-1.5 text-[12.5px] leading-snug text-white/70">
               из {formatRub(state.goal.target)}
             </div>
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3 text-[12.5px]">
-          <span className="text-[#83869E]">Осталось накопить</span>
-          <span className="font-bold tabular text-lime">{formatRub(progress.remaining)}</span>
+        <div className="relative z-10 mt-4 flex items-center justify-between border-t border-white/20 pt-3 text-[12.5px]">
+          <span className="text-white/70">Осталось накопить</span>
+          <span className="font-bold tabular text-white">{formatRub(progress.remaining)}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between text-[12.5px]">
-          <span className="text-[#83869E]">До дедлайна</span>
-          <span className="font-semibold tabular text-[#EFF0FA]">
+        <div className="relative z-10 mt-2 flex items-center justify-between text-[12.5px]">
+          <span className="text-white/70">До дедлайна</span>
+          <span className="font-semibold tabular text-white">
             {progress.overdue
               ? 'дедлайн прошёл'
               : `${progress.daysLeft} ${daysWord(progress.daysLeft)} · ${deadlineTxt}`}
@@ -162,7 +162,7 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
             haptic.impact('light')
             onAdd('income')
           }}
-          className="press rounded-card bg-accent py-3 text-[15px] font-semibold text-onaccent shadow-float"
+          className="btn-grad press rounded-card py-3 text-[15px] font-semibold"
         >
           + Поступление
         </button>
@@ -171,7 +171,7 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
             haptic.impact('light')
             onAdd('expense')
           }}
-          className="press rounded-card border border-line bg-surface py-3 text-[15px] font-semibold text-ink shadow-card"
+          className="glass press rounded-card py-3 text-[15px] font-semibold text-ink"
         >
           − Расход
         </button>

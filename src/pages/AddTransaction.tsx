@@ -205,8 +205,8 @@ export function AddTransaction({
       {/* Кнопка подтверждения — в приложении (не системная кнопка Telegram) */}
       <button
         onClick={submit}
-        className={`press mt-4 w-full rounded-card py-3.5 text-[15px] font-semibold shadow-float ${
-          valid ? 'bg-accent text-onaccent' : 'bg-surface2 text-muted'
+        className={`press mt-4 w-full rounded-card py-3.5 text-[15px] font-semibold ${
+          valid ? 'btn-grad' : 'glass text-muted'
         }`}
       >
         Добавить

@@ -16,7 +16,8 @@ export default {
         accent: 'var(--accent)',
         onaccent: 'var(--on-accent)',
         'accent-soft': 'var(--accent-soft)',
-        lime: '#C6F245',
+        // «lime» — денежно-позитивный цвет (теперь мятный), завязан на токен
+        lime: 'var(--lime)',
         income: 'var(--income)',
         expense: 'var(--expense)',
         line: 'var(--border)',

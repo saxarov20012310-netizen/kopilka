@@ -16,7 +16,7 @@ export function StatTile({
   icon?: ReactNode
 }) {
   return (
-    <div className="rounded-card border border-line bg-surface p-3.5 shadow-card">
+    <div className="glass rounded-card p-3.5 shadow-card">
       <div className="flex items-center gap-1.5 text-muted">
         {icon}
         <span className="text-[11.5px] leading-none">{label}</span>

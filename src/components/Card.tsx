@@ -12,7 +12,7 @@ export function Card({
   return (
     <div
       onClick={onClick}
-      className={`rounded-lg2 border border-line bg-surface shadow-card ${onClick ? 'press cursor-pointer' : ''} ${className}`}
+      className={`glass rounded-lg2 shadow-card ${onClick ? 'press cursor-pointer' : ''} ${className}`}
     >
       {children}
     </div>

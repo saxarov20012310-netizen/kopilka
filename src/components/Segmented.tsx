@@ -16,7 +16,7 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <div className="flex rounded-pill border border-line bg-surface2 p-1">
+    <div className="glass flex rounded-pill p-1">
       {options.map((o) => {
         const active = o.value === value
         return (
@@ -27,7 +27,7 @@ export function Segmented<T extends string>({
               onChange(o.value)
             }}
             className={`flex-1 rounded-pill py-2 text-sm font-semibold transition-all ${
-              active ? 'bg-accent text-onaccent' : 'text-muted'
+              active ? 'btn-grad' : 'text-muted'
             }`}
           >
             {o.label}

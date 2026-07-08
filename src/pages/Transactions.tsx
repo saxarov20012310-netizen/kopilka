@@ -153,7 +153,7 @@ export function Transactions({ onAdd }: { onAdd: OpenAdd }) {
             haptic.impact('light')
             onAdd('income')
           }}
-          className="press rounded-pill bg-accent px-4 py-2 text-sm font-semibold text-onaccent shadow-float"
+          className="btn-grad press rounded-pill px-4 py-2 text-sm font-semibold"
         >
           + Добавить
         </button>

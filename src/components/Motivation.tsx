@@ -72,7 +72,7 @@ export function Motivation({ onAdd }: { onAdd?: OpenAdd }) {
               note: 'Догоняю план',
             })
           }}
-          className="press mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-pill bg-accent py-2.5 text-[14px] font-semibold text-onaccent"
+          className="btn-grad press mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-pill py-2.5 text-[14px] font-semibold"
         >
           Отложить {formatRub(earnings.topUp)}
           <span className="text-[16px] leading-none">+</span>
