@@ -9,15 +9,13 @@ import {
   type Progress,
 } from '../utils/calc'
 import { formatRub } from '../utils/format'
-import { monthNamePrep, todayISO } from '../utils/date'
 import { haptic } from '../hooks/useTelegram'
 import type { OpenAdd } from '../App'
 
 /**
- * Карточка «Совет» — вместо лозунгов конкретика:
- * статус относительно плана + сравнение «заработано / отложено / нужно»
- * по текущему месяцу. Спокойная поверхность без цветной заливки —
- * тоном выделяются только цифры. Тап по «доложите N» откладывает эту сумму.
+ * Карточка «Совет» — коротко и по делу: статус к плану одной фразой +
+ * (если отстаёшь) кнопка «Отложить N» в один тап. Без плотных абзацев —
+ * подробная разбивка получено/отложено/потрачено живёт в История → Заработок.
  */
 export function Motivation({ onAdd }: { onAdd?: OpenAdd }) {
   const { state } = useStore()
@@ -28,15 +26,10 @@ export function Motivation({ onAdd }: { onAdd?: OpenAdd }) {
 
   const seed = new Date().getDate() + state.transactions.length
   const headline = pickHeadline(pd, progress, seed)
-
-  const sharePct = Number.isFinite(strategy.requiredShare)
-    ? Math.round(Math.min(1, strategy.requiredShare) * 100)
-    : 100
-  const savedPct = Math.round(earnings.savedShare * 100)
-  const mon = monthNamePrep(todayISO())
+  const showTopUp = earnings.topUp > 0 && strategy.verdict !== 'done'
 
   return (
-    <div className="rounded-card border border-line bg-surface p-4 shadow-card">
+    <div className="rounded-lg2 border border-line bg-surface p-4 shadow-card">
       <div className="flex items-center gap-2">
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-[12px] text-accent">
           ✦
@@ -48,31 +41,13 @@ export function Motivation({ onAdd }: { onAdd?: OpenAdd }) {
         {headline.text}
       </p>
 
-      {/* Заработано / отложено / нужно — по текущему месяцу */}
-      {earnings.received > 0 && strategy.verdict !== 'done' && (
-        <p className="mt-2 text-[13px] leading-relaxed text-muted">
-          В {mon} получено{' '}
-          <b className="tabular text-ink">{formatRub(earnings.received)}</b>, отложено{' '}
-          <b className={`tabular ${savedPct >= sharePct ? 'text-income' : 'text-ink'}`}>
-            {formatRub(Math.max(0, earnings.savedThisMonth))}
-          </b>{' '}
-          ({savedPct}%). Для цели нужно ≈{sharePct}%
-          {earnings.topUp > 0 ? <> — доложите ещё:</> : <> — вы идёте с запасом.</>}
-        </p>
-      )}
-
-      {/* Один тап — отложить недостающее до нужной доли */}
-      {earnings.topUp > 0 && onAdd && (
+      {showTopUp && onAdd && (
         <button
           onClick={() => {
             haptic.impact('light')
-            onAdd('income', {
-              amount: earnings.topUp,
-              category: 'other',
-              note: 'Догоняю план',
-            })
+            onAdd('income', { amount: earnings.topUp, category: 'other', note: 'Догоняю план' })
           }}
-          className="btn-grad press mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-pill py-2.5 text-[14px] font-semibold"
+          className="btn-grad press mt-3 flex w-full items-center justify-center gap-1.5 rounded-pill py-2.5 text-[14px] font-semibold"
         >
           Отложить {formatRub(earnings.topUp)}
           <span className="text-[16px] leading-none">+</span>
@@ -93,19 +68,19 @@ function pickHeadline(
 ): { text: string; tone: 'ink' | 'expense' } {
   switch (pd.status) {
     case 'reached':
-      return { tone: 'ink', text: '🎉 Цель достигнута! Вы справились — можно ставить новую.' }
+      return { tone: 'ink', text: '🎉 Цель достигнута! Можно ставить новую.' }
     case 'overdue':
       return {
         tone: 'expense',
-        text: `Дедлайн прошёл, а до цели ${formatRub(p.remaining)}. Обновите срок в настройках — и добивайте остаток.`,
+        text: `Дедлайн прошёл, до цели ${formatRub(p.remaining)}. Обнови срок во вкладке «Цель».`,
       }
     case 'start':
       return {
         tone: 'ink',
         text: pick(
           [
-            'Копилка готова. Первый взнос — самый важный: начните с любой суммы.',
-            'Отличный момент начать: первые взносы задают темп всей цели.',
+            'Начни с любой суммы — первый взнос самый важный.',
+            'Отличный момент начать: первые взносы задают темп.',
           ],
           seed
         ),
@@ -113,36 +88,18 @@ function pickHeadline(
     case 'ahead':
       return {
         tone: 'ink',
-        text: pick(
-          [
-            `Опережение ${formatRub(pd.delta)} — отличный темп, так держать!`,
-            `Вы впереди плана на ${formatRub(pd.delta)}. Цель приближается быстрее срока.`,
-          ],
-          seed
-        ),
+        text: `Ты впереди плана на ${formatRub(pd.delta)} — отличный темп!`,
       }
     case 'behind':
       return {
         tone: 'expense',
-        text: pick(
-          [
-            `Отставание ${formatRub(-pd.delta)}. Догоните, откладывая +${formatRub(pd.catchUpPerDay)} в день.`,
-            `План впереди на ${formatRub(-pd.delta)}. Вернётесь в график: +${formatRub(pd.catchUpPerDay)} в день на этой неделе.`,
-          ],
-          seed
-        ),
+        text: `Отстаёшь на ${formatRub(-pd.delta)}. Чтобы догнать — откладывай +${formatRub(pd.catchUpPerDay)} в день.`,
       }
     case 'onTrack':
     default:
       return {
         tone: 'ink',
-        text: pick(
-          [
-            `Вы в графике. До цели ${formatRub(p.remaining)} — держите темп.`,
-            'Точно по плану, без отставаний. Продолжайте в том же ритме.',
-          ],
-          seed
-        ),
+        text: `Идёшь по плану. До цели ${formatRub(p.remaining)} — держи темп.`,
       }
   }
 }

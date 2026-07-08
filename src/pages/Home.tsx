@@ -1,12 +1,11 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/store'
-import { calcProgress, calcStrategy, calcUpcoming } from '../utils/calc'
+import { calcProgress, calcUpcoming } from '../utils/calc'
 import { ProgressRing } from '../components/ProgressRing'
-import { StatTile } from '../components/StatTile'
 import { Motivation } from '../components/Motivation'
 import { Card } from '../components/Card'
-import { formatRub, formatCompact, daysWord } from '../utils/format'
-import { formatDay, formatMonthYear } from '../utils/date'
+import { formatRub, daysWord } from '../utils/format'
+import { formatDay } from '../utils/date'
 import { haptic } from '../hooks/useTelegram'
 import { CategoryIcon } from '../components/icons'
 import type { OpenAdd } from '../App'
@@ -14,12 +13,9 @@ import type { OpenAdd } from '../App'
 export function Home({ onAdd }: { onAdd: OpenAdd }) {
   const { state } = useStore()
   const progress = useMemo(() => calcProgress(state), [state])
-  const strategy = useMemo(() => calcStrategy(state), [state])
   const upcoming = useMemo(() => calcUpcoming(state), [state])
 
   const deadlineTxt = formatDay(state.goal.deadline)
-  // Цель на грани/недостижима — честно показываем реальный срок.
-  const goalTight = strategy.verdict === 'tight' || strategy.verdict === 'unreal'
 
   return (
     <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
@@ -75,49 +71,14 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
         </div>
       </section>
 
-      {/* Честность про достижимость: реальный срок при текущей норме */}
-      {goalTight && strategy.realisticDate && (
-        <div
-          className="rise mt-2.5 flex items-start gap-2.5 rounded-card border border-expense/25 bg-expense/[0.08] p-3.5"
-          style={{ animationDelay: '30ms' }}
-        >
-          <span className="mt-0.5 text-[15px]">⚠️</span>
-          <span className="min-w-0 flex-1 text-[12.5px] leading-snug text-ink">
-            {strategy.verdict === 'unreal' ? (
-              <>
-                К этому сроку не успеть даже откладывая всё. Реальный срок —{' '}
-                <b className="text-expense">{formatMonthYear(strategy.realisticDate)}</b>.
-              </>
-            ) : (
-              <>
-                Реальный срок при норме {Math.round(state.settings.savingRate * 100)}% —{' '}
-                <b className="text-expense">{formatMonthYear(strategy.realisticDate)}</b>, а не{' '}
-                {deadlineTxt}.
-              </>
-            )}{' '}
-            <span className="text-muted">Подвинь дедлайн или сумму во вкладке «Цель».</span>
-          </span>
-        </div>
-      )}
-
-      {/* Стратегия: сколько отложить с каждого типа поступления */}
-      <div className="rise mt-3.5" style={{ animationDelay: '60ms' }}>
-        <SectionTitle>Стратегия до дедлайна</SectionTitle>
-        <div className="grid grid-cols-3 gap-2">
-          <StatTile label="С зарплаты" value={formatCompact(strategy.perSalary)} hint="₽" />
-          <StatTile label="С аванса" value={formatCompact(strategy.perAdvance)} hint="₽" />
-          <StatTile label="За смену" value={formatCompact(strategy.perShift)} hint="₽" accent />
-        </div>
-      </div>
-
-      {/* Совет: статус + заработано/отложено/нужно (тап по «доложите» — отложить) */}
-      <div className="rise mt-3" style={{ animationDelay: '120ms' }}>
+      {/* Совет: статус + одно действие «Отложить N» */}
+      <div className="rise mt-3.5" style={{ animationDelay: '80ms' }}>
         <Motivation onAdd={onAdd} />
       </div>
 
       {/* Ближайшие поступления — тап по строке откладывает рекомендованную сумму */}
-      <div className="rise mt-4" style={{ animationDelay: '180ms' }}>
-        <SectionTitle>Ближайшие поступления</SectionTitle>
+      <div className="rise mt-4" style={{ animationDelay: '150ms' }}>
+        <h2 className="mb-2 px-1 text-[15px] font-bold">Отложить с поступления</h2>
         <Card className="divide-y divide-line px-2">
           {upcoming.map((e) => (
             <button
@@ -152,11 +113,11 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
             </button>
           ))}
         </Card>
-        <p className="mt-1.5 px-1 text-[11.5px] text-muted">Коснись строки, чтобы отложить эту сумму</p>
+        <p className="mt-1.5 px-1 text-[11.5px] text-muted">Коснись строки — сумма подставится сама</p>
       </div>
 
       {/* Быстрые действия */}
-      <div className="rise mt-4 grid grid-cols-2 gap-3" style={{ animationDelay: '240ms' }}>
+      <div className="rise mt-4 grid grid-cols-2 gap-3" style={{ animationDelay: '210ms' }}>
         <button
           onClick={() => {
             haptic.impact('light')
@@ -178,8 +139,4 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
       </div>
     </div>
   )
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="mb-2 px-1 text-[15px] font-bold">{children}</h2>
 }

@@ -4,7 +4,6 @@ import { Card } from '../components/Card'
 import { haptic, confirmNative, alertNative, getTelegramUserId } from '../hooks/useTelegram'
 import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDayYear, daysBetween } from '../utils/date'
-import { calcStrategy } from '../utils/calc'
 import { exportState, importState } from '../utils/storage'
 import { fetchSkazkaSummary, type SkazkaSummary } from '../utils/skazka'
 
@@ -95,29 +94,6 @@ export function Settings() {
     [title, targetNum, deadline, salaryAmt, advanceAmt, salaryDay, advanceDay, shifts, tips, rate, state]
   )
 
-  // Живая стратегия: пересчитывается прямо при вводе, ещё до сохранения.
-  const liveStrategy = useMemo(() => {
-    const tmp = {
-      ...state,
-      goal: {
-        ...state.goal,
-        target: targetNum > 0 ? targetNum : state.goal.target,
-        deadline: daysLeft > 0 ? deadline : state.goal.deadline,
-      },
-      settings: {
-        ...state.settings,
-        salaryAmount: parseAmount(salaryAmt) || 0,
-        advanceAmount: parseAmount(advanceAmt) || 0,
-        salaryDay: Number(salaryDay) || state.settings.salaryDay,
-        advanceDay: Number(advanceDay) || state.settings.advanceDay,
-        shiftsPerMonth: Number(shifts) || 0,
-        tipsPerShift: parseAmount(tips) || 0,
-        savingRate: rate,
-      },
-    }
-    return calcStrategy(tmp)
-  }, [state, targetNum, deadline, daysLeft, salaryAmt, advanceAmt, salaryDay, advanceDay, shifts, tips, rate])
-
   const save = async () => {
     if (!valid) {
       haptic.warning()
@@ -187,9 +163,6 @@ export function Settings() {
   }
 
   const ratePct = Math.round(rate * 100)
-  const neededPct = Number.isFinite(liveStrategy.requiredShare)
-    ? Math.round(Math.min(1, liveStrategy.requiredShare) * 100)
-    : 100
   const perMonthSaving = Math.round(
     (parseAmount(salaryAmt) + parseAmount(advanceAmt) + (Number(shifts) || 0) * parseAmount(tips)) *
       rate
@@ -365,26 +338,9 @@ export function Settings() {
           <span>Комфортно</span>
           <span>Агрессивно</span>
         </div>
-        <div className="mt-3 space-y-1 border-t border-white/[0.06] pt-3 text-[12.5px] text-[#83869E]">
-          <div>
-            ≈ <b className="tabular text-lime">{formatRub(perMonthSaving)}</b> в месяц (выплаты + чаевые)
-          </div>
-          {/* Живая сверка нормы со стратегией цели */}
-          <div>
-            {liveStrategy.verdict === 'unreal' ? (
-              <span className="text-[#FF7A85]">
-                Для цели не хватит даже 100% — сдвиньте дедлайн или уменьшите сумму
-              </span>
-            ) : neededPct > ratePct ? (
-              <span className="text-[#FF7A85]">
-                Для цели нужно ≈{neededPct}% — поднимите норму или сдвиньте дедлайн
-              </span>
-            ) : (
-              <span>
-                Для цели достаточно ≈{neededPct}% — ваша норма {ratePct}% покрывает план
-              </span>
-            )}
-          </div>
+        <div className="mt-3 border-t border-white/[0.06] pt-3 text-[12.5px] text-[#83869E]">
+          Откладываешь ≈ <b className="tabular text-lime">{formatRub(perMonthSaving)}</b> в месяц.
+          Успеешь ли к цели — смотри во вкладке «План».
         </div>
       </section>
 
