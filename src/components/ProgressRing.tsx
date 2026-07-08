@@ -8,11 +8,16 @@ export function ProgressRing({
   percent,
   size = 220,
   stroke = 16,
+  color = 'var(--accent)',
+  track = 'var(--ring-track)',
   children,
 }: {
   percent: number
   size?: number
   stroke?: number
+  /** Переопределение цветов — для «фирменной» тёмной карты (лайм в обеих темах). */
+  color?: string
+  track?: string
   children?: React.ReactNode
 }) {
   const r = (size - stroke) / 2
@@ -50,7 +55,7 @@ export function ProgressRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--ring-track)"
+          stroke={track}
           strokeWidth={stroke}
         />
         <circle
@@ -58,7 +63,7 @@ export function ProgressRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--accent)"
+          stroke={color}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circ}

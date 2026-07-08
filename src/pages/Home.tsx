@@ -32,38 +32,46 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
         </div>
       </div>
 
-      {/* Кольцо прогресса */}
-      <Card className="p-4">
-        <div className="flex flex-col items-center">
-          <ProgressRing percent={progress.percent} size={164} stroke={12}>
-            <div className="text-[12px] text-muted">Накоплено</div>
-            <div className="font-display text-[22px] font-semibold tabular leading-tight text-ink">
-              {formatCompact(progress.saved)}
-            </div>
-            <div className="mt-0.5 rounded-pill bg-accent-soft px-2 py-0.5 text-[12.5px] font-bold text-accent tabular">
-              {Math.round(progress.percent)}%
+      {/* Накопления — фирменная тёмная карта: кольцо слева, цифры справа */}
+      <section className="rise rounded-lg2 bg-inverse p-5">
+        <div className="flex items-center gap-5">
+          <ProgressRing
+            percent={progress.percent}
+            size={112}
+            stroke={10}
+            color="#C6F245"
+            track="#23264A"
+          >
+            <div className="font-display text-[19px] font-semibold tabular text-lime">
+              {Math.round(progress.percent)}
+              <span className="text-[12px]">%</span>
             </div>
           </ProgressRing>
 
-          <div className="mt-3.5 grid w-full grid-cols-2 gap-2">
-            <StatTile label="Цель" value={formatRub(state.goal.target)} />
-            <StatTile
-              label="Осталось"
-              value={formatRub(progress.remaining)}
-              accent
-            />
-          </div>
-          <div className="mt-2 flex w-full items-center justify-center gap-1.5 text-[12.5px] text-muted">
-            <span>
-              {progress.overdue
-                ? 'Дедлайн прошёл'
-                : `Осталось ${progress.daysLeft} ${daysWord(progress.daysLeft)}`}
-            </span>
-            <span>·</span>
-            <span>{deadlineTxt}</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[12px] text-[#83869E]">Накоплено</div>
+            <div className="mt-0.5 font-display text-[26px] font-semibold tabular leading-tight text-[#EFF0FA]">
+              {formatRub(progress.saved)}
+            </div>
+            <div className="mt-1.5 text-[12.5px] leading-snug text-[#83869E]">
+              из {formatRub(state.goal.target)}
+            </div>
           </div>
         </div>
-      </Card>
+
+        <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3 text-[12.5px]">
+          <span className="text-[#83869E]">Осталось накопить</span>
+          <span className="font-bold tabular text-lime">{formatRub(progress.remaining)}</span>
+        </div>
+        <div className="mt-2 flex items-center justify-between text-[12.5px]">
+          <span className="text-[#83869E]">До дедлайна</span>
+          <span className="font-semibold tabular text-[#EFF0FA]">
+            {progress.overdue
+              ? 'дедлайн прошёл'
+              : `${progress.daysLeft} ${daysWord(progress.daysLeft)} · ${deadlineTxt}`}
+          </span>
+        </div>
+      </section>
 
       {/* Стратегия: сколько отложить с каждого типа поступления */}
       <div className="rise mt-3.5" style={{ animationDelay: '60ms' }}>
