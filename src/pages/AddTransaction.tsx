@@ -24,18 +24,24 @@ const QUICK = [500, 1000, 3000, 5000]
 
 export function AddTransaction({
   initialKind = 'income',
+  initialAmount,
+  initialCategory,
+  initialNote,
   onClose,
 }: {
   initialKind?: TxKind
+  initialAmount?: number
+  initialCategory?: IncomeSource | ExpenseCategory
+  initialNote?: string
   onClose: () => void
 }) {
   const { dispatch } = useStore()
   const [kind, setKind] = useState<TxKind>(initialKind)
-  const [amountRaw, setAmountRaw] = useState('')
+  const [amountRaw, setAmountRaw] = useState(initialAmount ? String(initialAmount) : '')
   const [category, setCategory] = useState<IncomeSource | ExpenseCategory>(
-    initialKind === 'income' ? 'tips' : 'spending'
+    initialCategory ?? (initialKind === 'income' ? 'tips' : 'spending')
   )
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState(initialNote ?? '')
   const [date, setDate] = useState(todayISO())
   const [touched, setTouched] = useState(false)
 

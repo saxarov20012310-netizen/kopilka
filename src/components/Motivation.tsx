@@ -10,14 +10,16 @@ import {
 } from '../utils/calc'
 import { formatRub } from '../utils/format'
 import { monthNamePrep, todayISO } from '../utils/date'
+import { haptic } from '../hooks/useTelegram'
+import type { OpenAdd } from '../App'
 
 /**
  * Карточка «Совет» — вместо лозунгов конкретика:
  * статус относительно плана + сравнение «заработано / отложено / нужно»
  * по текущему месяцу. Спокойная поверхность без цветной заливки —
- * тоном выделяются только цифры.
+ * тоном выделяются только цифры. Тап по «доложите N» откладывает эту сумму.
  */
-export function Motivation() {
+export function Motivation({ onAdd }: { onAdd?: OpenAdd }) {
   const { state } = useStore()
   const progress = useMemo(() => calcProgress(state), [state])
   const pd = useMemo(() => calcPlanDelta(state), [state])
@@ -55,15 +57,26 @@ export function Motivation() {
             {formatRub(Math.max(0, earnings.savedThisMonth))}
           </b>{' '}
           ({savedPct}%). Для цели нужно ≈{sharePct}%
-          {earnings.topUp > 0 ? (
-            <>
-              {' '}
-              — доложите ещё <b className="tabular text-accent">{formatRub(earnings.topUp)}</b>.
-            </>
-          ) : (
-            <> — вы идёте с запасом.</>
-          )}
+          {earnings.topUp > 0 ? <> — доложите ещё:</> : <> — вы идёте с запасом.</>}
         </p>
+      )}
+
+      {/* Один тап — отложить недостающее до нужной доли */}
+      {earnings.topUp > 0 && onAdd && (
+        <button
+          onClick={() => {
+            haptic.impact('light')
+            onAdd('income', {
+              amount: earnings.topUp,
+              category: 'other',
+              note: 'Догоняю план',
+            })
+          }}
+          className="press mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-pill bg-accent py-2.5 text-[14px] font-semibold text-onaccent"
+        >
+          Отложить {formatRub(earnings.topUp)}
+          <span className="text-[16px] leading-none">+</span>
+        </button>
       )}
     </div>
   )

@@ -9,9 +9,9 @@ import { formatRub, formatCompact, daysWord } from '../utils/format'
 import { formatDay } from '../utils/date'
 import { haptic } from '../hooks/useTelegram'
 import { CategoryIcon } from '../components/icons'
-import type { TxKind } from '../types/models'
+import type { OpenAdd } from '../App'
 
-export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
+export function Home({ onAdd }: { onAdd: OpenAdd }) {
   const { state } = useStore()
   const progress = useMemo(() => calcProgress(state), [state])
   const strategy = useMemo(() => calcStrategy(state), [state])
@@ -83,37 +83,49 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
         </div>
       </div>
 
-      {/* Совет: статус + заработано/отложено/нужно */}
+      {/* Совет: статус + заработано/отложено/нужно (тап по «доложите» — отложить) */}
       <div className="rise mt-3" style={{ animationDelay: '120ms' }}>
-        <Motivation />
+        <Motivation onAdd={onAdd} />
       </div>
 
-      {/* Ближайшие поступления */}
+      {/* Ближайшие поступления — тап по строке откладывает рекомендованную сумму */}
       <div className="rise mt-4" style={{ animationDelay: '180ms' }}>
         <SectionTitle>Ближайшие поступления</SectionTitle>
-        <Card className="divide-y divide-line px-4">
+        <Card className="divide-y divide-line px-2">
           {upcoming.map((e) => (
-            <div key={e.source} className="flex items-center gap-3 py-3">
-              <div className="grid h-10 w-10 place-items-center rounded-full bg-accent-soft text-accent">
+            <button
+              key={e.source}
+              onClick={() => {
+                haptic.impact('light')
+                onAdd('income', {
+                  amount: e.suggested,
+                  category: e.source,
+                  note: `Отложил с «${e.title.toLowerCase()}»`,
+                })
+              }}
+              className="press flex w-full items-center gap-3 px-2 py-3 text-left"
+            >
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
                 <CategoryIcon name={e.source} size={19} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-semibold text-ink">{e.title}</div>
-                <div className="text-[13px] text-muted">
+                <div className="truncate text-[13px] text-muted">
                   {e.source === 'tips'
                     ? `≈ ${formatRub(e.expected)} · после каждой смены`
                     : `≈ ${formatRub(e.expected)} · ${formatDay(e.date)}`}
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-[11px] text-muted">отложить</div>
-                <div className="text-[15px] font-bold text-accent tabular">
+              <div className="flex shrink-0 items-center gap-1.5 rounded-pill bg-accent-soft px-3 py-1.5">
+                <span className="text-[14px] font-bold text-accent tabular">
                   {formatRub(e.suggested)}
-                </div>
+                </span>
+                <span className="text-[15px] leading-none text-accent">+</span>
               </div>
-            </div>
+            </button>
           ))}
         </Card>
+        <p className="mt-1.5 px-1 text-[11.5px] text-muted">Коснись строки, чтобы отложить эту сумму</p>
       </div>
 
       {/* Быстрые действия */}

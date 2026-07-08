@@ -8,15 +8,23 @@ import { Transactions } from './pages/Transactions'
 import { Settings } from './pages/Settings'
 import { Onboarding } from './pages/Onboarding'
 import { AddTransaction } from './pages/AddTransaction'
-import type { TxKind } from './types/models'
+import type { TxKind, IncomeSource, ExpenseCategory } from './types/models'
+
+// Предзаполнение экрана добавления — для «отложить в один тап».
+export interface AddPrefill {
+  amount?: number
+  category?: IncomeSource | ExpenseCategory
+  note?: string
+}
+export type OpenAdd = (kind: TxKind, prefill?: AddPrefill) => void
 
 export default function App() {
   useTelegramInit()
   const { state, dispatch } = useStore()
   const [tab, setTab] = useState<TabKey>('home')
-  const [adding, setAdding] = useState<TxKind | null>(null)
+  const [adding, setAdding] = useState<({ kind: TxKind } & AddPrefill) | null>(null)
 
-  const openAdd = useCallback((kind: TxKind) => setAdding(kind), [])
+  const openAdd = useCallback<OpenAdd>((kind, prefill) => setAdding({ kind, ...prefill }), [])
   const closeAdd = useCallback(() => setAdding(null), [])
 
   // Онбординг перекрывает всё, пока не пройден.
@@ -26,7 +34,15 @@ export default function App() {
 
   // Экран добавления операции — поверх вкладок, с нативной Back Button.
   if (adding) {
-    return <AddTransaction initialKind={adding} onClose={closeAdd} />
+    return (
+      <AddTransaction
+        initialKind={adding.kind}
+        initialAmount={adding.amount}
+        initialCategory={adding.category}
+        initialNote={adding.note}
+        onClose={closeAdd}
+      />
+    )
   }
 
   return (

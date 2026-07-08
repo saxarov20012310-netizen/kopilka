@@ -55,6 +55,10 @@ assert('доля ≈ 6.4%', Math.abs(e.savedShare - 2000 / 31100) < 1e-9)
 // доложить = received × requiredShare − saved
 const expTopUp = Math.max(0, Math.round(31_100 * Math.min(1, s.requiredShare) - 2_000))
 assert('topUp сходится', e.topUp === expTopUp)
+// бюджет: потрачено = 500 (расход 'b'), свободно = 31100 − 2000 − 500 = 28600
+console.log('  потрачено:', e.spentThisMonth, '| свободно:', e.free)
+assert('потрачено = 500', e.spentThisMonth === 500)
+assert('свободно = 28600', e.free === 31_100 - 2_000 - 500)
 // зарплата за июль ожидается 5 августа (среда — без сдвига)
 assert('зарплата за июль → 5 августа', e.items.some(i => i.sub.includes('июль') && i.date === '2026-08-05' && !i.received))
 // стратегия: приток > 0, доля 0..1

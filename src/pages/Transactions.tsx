@@ -9,11 +9,12 @@ import { formatDay, todayISO, monthNamePrep } from '../utils/date'
 import { affectsSavings, calcMonthEarnings } from '../utils/calc'
 import { CategoryIcon } from '../components/icons'
 import type { Transaction, TxKind } from '../types/models'
+import type { OpenAdd } from '../App'
 
 type Filter = 'all' | TxKind
 type Mode = 'savings' | 'earnings'
 
-export function Transactions({ onAdd }: { onAdd: (kind: TxKind) => void }) {
+export function Transactions({ onAdd }: { onAdd: OpenAdd }) {
   const { state, dispatch } = useStore()
   const [mode, setMode] = useState<Mode>('savings')
   const [filter, setFilter] = useState<Filter>('all')
@@ -53,25 +54,42 @@ export function Transactions({ onAdd }: { onAdd: (kind: TxKind) => void }) {
           onChange={setMode}
         />
 
-        {/* Итог месяца: получено / отложено / ожидается */}
+        {/* Итог месяца: получено · отложено / потрачено / свободно */}
         <section className="rise mt-3.5 rounded-lg2 bg-inverse p-5" style={{ animationDelay: '40ms' }}>
           <div className="text-[12.5px] text-[#83869E]">Получено в {mon}</div>
           <div className="mt-1 font-display text-[26px] font-semibold tabular text-[#EFF0FA]">
             {formatRub(earnings.received)}
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-white/[0.06] pt-3 text-[12.5px]">
+          <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/[0.06] pt-3 text-[12px]">
             <div>
               <div className="text-[#83869E]">Отложено</div>
               <div className="mt-0.5 font-bold tabular text-lime">
-                {formatRub(Math.max(0, earnings.savedThisMonth))} · {savedPct}%
+                {formatRub(Math.max(0, earnings.savedThisMonth))}
+              </div>
+              <div className="text-[10.5px] text-[#83869E]">{savedPct}%</div>
+            </div>
+            <div>
+              <div className="text-[#83869E]">Потрачено</div>
+              <div className="mt-0.5 font-bold tabular text-[#FF7A85]">
+                {formatRub(earnings.spentThisMonth)}
               </div>
             </div>
             <div>
-              <div className="text-[#83869E]">Ещё придёт</div>
-              <div className="mt-0.5 font-bold tabular text-[#EFF0FA]">
-                {formatRub(earnings.expected)}
+              <div className="text-[#83869E]">Свободно</div>
+              <div
+                className={`mt-0.5 font-bold tabular ${
+                  earnings.free < 0 ? 'text-[#FF7A85]' : 'text-[#EFF0FA]'
+                }`}
+              >
+                {formatRub(earnings.free)}
               </div>
             </div>
+          </div>
+          <div className="mt-3 text-[11.5px] text-[#83869E]">
+            {earnings.expected > 0 && <>Ещё придёт {formatRub(earnings.expected)} · </>}
+            {earnings.free < 0
+              ? 'потрачено больше, чем на руках — загляни в расходы'
+              : 'свободно = получено − отложено − потрачено'}
           </div>
         </section>
 

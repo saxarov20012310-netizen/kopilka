@@ -125,6 +125,10 @@ export interface MonthEarnings {
   savedShare: number
   /** Сколько ещё доложить, чтобы выйти на требуемую долю стратегии, ₽. */
   topUp: number
+  /** Потрачено в этом месяце (все расходы), ₽. */
+  spentThisMonth: number
+  /** Свободно из полученного: получено − отложено − потрачено (может быть < 0). */
+  free: number
   shiftsCount: number
   tipsTotal: number
 }
@@ -201,10 +205,18 @@ export function calcMonthEarnings(state: AppState): MonthEarnings {
     0
   )
 
+  // Потрачено в этом месяце — все расходы (реально ушедшие деньги).
+  const spentThisMonth = state.transactions.reduce(
+    (acc, t) =>
+      t.kind === 'expense' && t.date >= monthStart && t.date <= today ? acc + t.amount : acc,
+    0
+  )
+
   const savedShare = received > 0 ? Math.max(0, savedThisMonth) / received : 0
   const { requiredShare } = calcStrategy(state)
   const share = Number.isFinite(requiredShare) ? Math.min(1, requiredShare) : 1
   const topUp = Math.max(0, Math.round(received * share - Math.max(0, savedThisMonth)))
+  const free = received - Math.max(0, savedThisMonth) - spentThisMonth
 
   return {
     items,
@@ -213,6 +225,8 @@ export function calcMonthEarnings(state: AppState): MonthEarnings {
     savedThisMonth,
     savedShare,
     topUp,
+    spentThisMonth,
+    free,
     shiftsCount: shifts.length,
     tipsTotal: state.skazka?.monthTips ?? 0,
   }
