@@ -43,12 +43,21 @@ export function Settings() {
       await alertNative('В skazka нет смен за последние 30 дней — нечего подтягивать.')
       return
     }
-    dispatch({ type: 'IMPORT_SHIFTS', shifts: s.monthShifts, rate })
     setShifts(String(s.shiftsPerMonth))
     setTips(String(s.avgTips))
     dispatch({
       type: 'SET_SETTINGS',
       settings: { shiftsPerMonth: s.shiftsPerMonth, tipsPerShift: s.avgTips },
+    })
+    dispatch({
+      type: 'SET_SKAZKA',
+      snapshot: {
+        fetchedAt: Date.now(),
+        shiftsPerMonth: s.shiftsPerMonth,
+        avgTips: s.avgTips,
+        monthShifts: s.monthShifts,
+        monthTips: s.monthTips,
+      },
     })
     setSynced(s)
     haptic.success()
@@ -301,7 +310,7 @@ export function Settings() {
         <p className="mt-1.5 px-2 text-[12px] text-muted">
           skazka за {synced.days} дн.: {synced.shifts} смен · в среднем{' '}
           {formatRub(synced.avgTips)}/смена. В этом месяце — {synced.monthShifts.length} смен на{' '}
-          {formatRub(synced.monthTips)} чая, отложено по норме {ratePct}%.
+          {formatRub(synced.monthTips)} чая (см. История → Заработок).
         </p>
       )}
 

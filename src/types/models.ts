@@ -19,8 +19,25 @@ export interface Transaction {
   /** Учитывается ли в накоплениях (для income по умолчанию true). */
   counts: boolean
   createdAt: number
-  /** id смены из skazka, если операция создана автосинхронизацией (для идемпотентности). */
+  /** id смены из skazka (историческое поле старого автоимпорта — такие операции вычищаются миграцией). */
   skazkaId?: number
+}
+
+/**
+ * Снимок данных из skazka — это ЗАРАБОТОК (смены и чай), а не отложенное.
+ * Обновляется автосинхронизацией при каждом открытии внутри Telegram.
+ */
+export interface SkazkaSnapshot {
+  /** Когда обновлено (мс). */
+  fetchedAt: number
+  /** Фактических смен в месяц (норма за 30 дней). */
+  shiftsPerMonth: number
+  /** Средний чай за смену, ₽. */
+  avgTips: number
+  /** Смены текущего календарного месяца. */
+  monthShifts: { id: number; date: string; tips: number }[]
+  /** Чай за текущий месяц суммарно, ₽. */
+  monthTips: number
 }
 
 export interface Goal {
@@ -56,4 +73,6 @@ export interface AppState {
   settings: Settings
   transactions: Transaction[]
   onboarded: boolean
+  /** Последние данные заработка из skazka (null — ещё не синхронизировались). */
+  skazka: SkazkaSnapshot | null
 }

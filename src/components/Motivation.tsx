@@ -1,33 +1,70 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/store'
-import { calcPlanDelta, calcProgress, type PlanDelta, type Progress } from '../utils/calc'
-import { formatRub, daysWord } from '../utils/format'
-
-type Tone = 'accent' | 'muted' | 'expense'
-
-const TONE_CLS: Record<Tone, string> = {
-  accent: 'border-accent/20 bg-accent-soft text-accent',
-  muted: 'border-line bg-surface text-muted',
-  expense: 'border-expense/20 bg-expense/10 text-expense',
-}
+import {
+  calcPlanDelta,
+  calcProgress,
+  calcStrategy,
+  calcMonthEarnings,
+  type PlanDelta,
+  type Progress,
+} from '../utils/calc'
+import { formatRub } from '../utils/format'
+import { monthNamePrep, todayISO } from '../utils/date'
 
 /**
- * Мотивация с конкретикой, а не лозунгом: опережение (акцент) /
- * в графике (нейтрально) / отставание (сколько добавлять в день, чтобы догнать).
- * Фраза меняется по дням и после каждой операции.
+ * Карточка «Совет» — вместо лозунгов конкретика:
+ * статус относительно плана + сравнение «заработано / отложено / нужно»
+ * по текущему месяцу. Спокойная поверхность без цветной заливки —
+ * тоном выделяются только цифры.
  */
 export function Motivation() {
   const { state } = useStore()
   const progress = useMemo(() => calcProgress(state), [state])
   const pd = useMemo(() => calcPlanDelta(state), [state])
+  const strategy = useMemo(() => calcStrategy(state), [state])
+  const earnings = useMemo(() => calcMonthEarnings(state), [state])
 
-  // Ротация вариантов: день месяца + число операций.
   const seed = new Date().getDate() + state.transactions.length
-  const { text, tone } = pickMessage(pd, progress, seed)
+  const headline = pickHeadline(pd, progress, seed)
+
+  const sharePct = Number.isFinite(strategy.requiredShare)
+    ? Math.round(Math.min(1, strategy.requiredShare) * 100)
+    : 100
+  const savedPct = Math.round(earnings.savedShare * 100)
+  const mon = monthNamePrep(todayISO())
 
   return (
-    <div className={`rounded-card border p-4 text-[14.5px] font-medium leading-snug ${TONE_CLS[tone]}`}>
-      {text}
+    <div className="rounded-card border border-line bg-surface p-4 shadow-card">
+      <div className="flex items-center gap-2">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-[12px] text-accent">
+          ✦
+        </span>
+        <span className="text-[12px] font-semibold uppercase tracking-wide text-muted">Совет</span>
+      </div>
+
+      <p className={`mt-2.5 text-[14.5px] font-medium leading-snug ${headline.tone === 'expense' ? 'text-expense' : 'text-ink'}`}>
+        {headline.text}
+      </p>
+
+      {/* Заработано / отложено / нужно — по текущему месяцу */}
+      {earnings.received > 0 && strategy.verdict !== 'done' && (
+        <p className="mt-2 text-[13px] leading-relaxed text-muted">
+          В {mon} получено{' '}
+          <b className="tabular text-ink">{formatRub(earnings.received)}</b>, отложено{' '}
+          <b className={`tabular ${savedPct >= sharePct ? 'text-income' : 'text-ink'}`}>
+            {formatRub(Math.max(0, earnings.savedThisMonth))}
+          </b>{' '}
+          ({savedPct}%). Для цели нужно ≈{sharePct}%
+          {earnings.topUp > 0 ? (
+            <>
+              {' '}
+              — доложите ещё <b className="tabular text-accent">{formatRub(earnings.topUp)}</b>.
+            </>
+          ) : (
+            <> — вы идёте с запасом.</>
+          )}
+        </p>
+      )}
     </div>
   )
 }
@@ -36,43 +73,41 @@ function pick<T>(arr: T[], seed: number): T {
   return arr[seed % arr.length]
 }
 
-function pickMessage(pd: PlanDelta, p: Progress, seed: number): { text: string; tone: Tone } {
+function pickHeadline(
+  pd: PlanDelta,
+  p: Progress,
+  seed: number
+): { text: string; tone: 'ink' | 'expense' } {
   switch (pd.status) {
     case 'reached':
-      return { tone: 'accent', text: '🎉 Цель достигнута! Вы справились — можно ставить новую.' }
-
+      return { tone: 'ink', text: '🎉 Цель достигнута! Вы справились — можно ставить новую.' }
     case 'overdue':
       return {
         tone: 'expense',
         text: `Дедлайн прошёл, а до цели ${formatRub(p.remaining)}. Обновите срок в настройках — и добивайте остаток.`,
       }
-
     case 'start':
       return {
-        tone: 'accent',
+        tone: 'ink',
         text: pick(
           [
             'Копилка готова. Первый взнос — самый важный: начните с любой суммы.',
             'Отличный момент начать: первые взносы задают темп всей цели.',
-            'Старт — сегодня. Даже небольшое поступление уже двигает вас к цели.',
           ],
           seed
         ),
       }
-
     case 'ahead':
       return {
-        tone: 'accent',
+        tone: 'ink',
         text: pick(
           [
             `Опережение ${formatRub(pd.delta)} — отличный темп, так держать!`,
             `Вы впереди плана на ${formatRub(pd.delta)}. Цель приближается быстрее срока.`,
-            `+${formatRub(pd.delta)} к плану. Если удержите темп — финишируете раньше.`,
           ],
           seed
         ),
       }
-
     case 'behind':
       return {
         tone: 'expense',
@@ -84,16 +119,14 @@ function pickMessage(pd: PlanDelta, p: Progress, seed: number): { text: string; 
           seed
         ),
       }
-
     case 'onTrack':
     default:
       return {
-        tone: 'muted',
+        tone: 'ink',
         text: pick(
           [
-            `Вы в графике: ${formatRub(p.saved)} из плановых ${formatRub(Math.round(pd.expected))}.`,
-            `Точно по плану. До цели ${formatRub(p.remaining)} и ${p.daysLeft} ${daysWord(p.daysLeft)} — держите темп.`,
-            `Ровный темп, без отставаний. Осталось ${formatRub(p.remaining)}.`,
+            `Вы в графике. До цели ${formatRub(p.remaining)} — держите темп.`,
+            'Точно по плану, без отставаний. Продолжайте в том же ритме.',
           ],
           seed
         ),

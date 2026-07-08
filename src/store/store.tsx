@@ -12,8 +12,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { AppState, Goal, Settings, Transaction } from '../types/models'
-import { fetchSkazkaSummary, type SkazkaShift } from '../utils/skazka'
+import type { AppState, Goal, Settings, Transaction, SkazkaSnapshot } from '../types/models'
+import { fetchSkazkaSummary } from '../utils/skazka'
 import { getTelegramUserId } from '../hooks/useTelegram'
 import {
   loadLocal,
@@ -31,7 +31,7 @@ type Action =
   | { type: 'SET_GOAL'; goal: Partial<Goal> }
   | { type: 'SET_SETTINGS'; settings: Partial<Settings> }
   | { type: 'SET_ONBOARDED'; value: boolean }
-  | { type: 'IMPORT_SHIFTS'; shifts: SkazkaShift[]; rate: number }
+  | { type: 'SET_SKAZKA'; snapshot: SkazkaSnapshot }
   | { type: 'HYDRATE'; state: AppState }
   | { type: 'RESET' }
 
@@ -63,27 +63,9 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, settings: { ...state.settings, ...action.settings } }
     case 'SET_ONBOARDED':
       return { ...state, onboarded: action.value }
-    case 'IMPORT_SHIFTS': {
-      // Идемпотентно: пропускаем смены, уже импортированные ранее (по skazkaId).
-      const known = new Set(
-        state.transactions.map((t) => t.skazkaId).filter((x): x is number => x != null)
-      )
-      const fresh = action.shifts.filter((s) => s.tips > 0 && !known.has(s.id))
-      if (fresh.length === 0) return state
-      // По каждой новой смене откладываем рекомендованную долю чаевых.
-      const added: Transaction[] = fresh.map((s) => ({
-        id: newId(),
-        kind: 'income',
-        amount: Math.round(s.tips * action.rate),
-        date: s.date,
-        category: 'tips',
-        note: `Смена · чай ${Math.round(s.tips)} ₽`,
-        counts: true,
-        createdAt: Date.now(),
-        skazkaId: s.id,
-      }))
-      return { ...state, transactions: [...added, ...state.transactions] }
-    }
+    case 'SET_SKAZKA':
+      // Снимок заработка из skazka: смены и чай — отдельно от отложенного.
+      return { ...state, skazka: action.snapshot }
     case 'HYDRATE':
       return action.state
     case 'RESET':
@@ -127,10 +109,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (cloudChecked) saveCloudDebounced(state, updatedAt)
   }, [state, cloudChecked])
 
-  // Свежее состояние без добавления в зависимости эффектов.
-  const stateRef = useRef(state)
-  stateRef.current = state
-
   // Автосинхронизация со skazka: после сверки с облаком тянем реальные смены
   // текущего месяца и обновляем ритм работы. Один раз за сессию.
   const syncedRef = useRef(false)
@@ -149,14 +127,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           settings: { shiftsPerMonth: s.shiftsPerMonth, tipsPerShift: s.avgTips },
         })
       }
-      // Откладываем долю чая по каждой новой смене месяца.
-      if (s.monthShifts.length > 0) {
-        dispatch({
-          type: 'IMPORT_SHIFTS',
-          shifts: s.monthShifts,
-          rate: stateRef.current.settings.savingRate,
-        })
-      }
+      // Снимок заработка — для экрана «Заработок» и советов.
+      dispatch({
+        type: 'SET_SKAZKA',
+        snapshot: {
+          fetchedAt: Date.now(),
+          shiftsPerMonth: s.shiftsPerMonth,
+          avgTips: s.avgTips,
+          monthShifts: s.monthShifts,
+          monthTips: s.monthTips,
+        },
+      })
     })
     return () => {
       cancelled = true

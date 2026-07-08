@@ -1,6 +1,6 @@
 // Централизованные расчёты накоплений. Здесь вся математика приложения.
 import type { AppState, Transaction, IncomeSource } from '../types/models'
-import { daysBetween, todayISO, nextPayday, addDays } from './date'
+import { daysBetween, todayISO, nextPayday, addDays, paydayInMonth, monthNameNom } from './date'
 
 export interface Progress {
   saved: number
@@ -98,6 +98,124 @@ export function calcPlanDelta(state: AppState): PlanDelta {
   else status = 'onTrack'
 
   return { expected, delta, status, catchUpPerDay }
+}
+
+// ───────────────────────── Заработок месяца ─────────────────────────
+
+export interface EarningItem {
+  kind: 'salary' | 'advance' | 'shift'
+  title: string
+  sub: string
+  date: string
+  amount: number
+  /** Деньги уже на руках (или смена уже отработана). */
+  received: boolean
+}
+
+export interface MonthEarnings {
+  /** Строки: выплаты и смены текущего месяца (полученные и ожидаемые). */
+  items: EarningItem[]
+  /** Получено в этом месяце (чай отработанных смен + пришедшие выплаты), ₽. */
+  received: number
+  /** Ещё ожидается в этом месяце + зарплата за этот месяц (придёт 5-го следующего), ₽. */
+  expected: number
+  /** Отложено в копилку в этом месяце, ₽. */
+  savedThisMonth: number
+  /** Доля отложенного от полученного (0..1). */
+  savedShare: number
+  /** Сколько ещё доложить, чтобы выйти на требуемую долю стратегии, ₽. */
+  topUp: number
+  shiftsCount: number
+  tipsTotal: number
+}
+
+/**
+ * Заработок текущего месяца по кассовому принципу: что реально пришло.
+ * Зарплата, пришедшая 5-го ЭТОГО месяца, — за прошлый месяц (так и подписываем);
+ * зарплата за текущий месяц придёт ~5-го следующего — показываем как ожидаемую.
+ */
+export function calcMonthEarnings(state: AppState): MonthEarnings {
+  const today = todayISO()
+  const { salaryAmount, advanceAmount, salaryDay, advanceDay } = state.settings
+  const monthStart = today.slice(0, 8) + '01'
+  const items: EarningItem[] = []
+
+  // Зарплата этого месяца (за прошлый месяц работы).
+  const salaryDate = paydayInMonth(salaryDay, today)
+  items.push({
+    kind: 'salary',
+    title: 'Зарплата',
+    sub: `за ${monthNameNom(addDays(monthStart, -1))}`,
+    date: salaryDate,
+    amount: salaryAmount,
+    received: salaryDate <= today,
+  })
+
+  // Аванс этого месяца.
+  const advanceDate = paydayInMonth(advanceDay, today)
+  items.push({
+    kind: 'advance',
+    title: 'Аванс',
+    sub: `за ${monthNameNom(today)}`,
+    date: advanceDate,
+    amount: advanceAmount,
+    received: advanceDate <= today,
+  })
+
+  // Зарплата ЗА текущий месяц — придёт ~5-го следующего.
+  const nextMonthDay = addDays(monthStart, 32)
+  const nextSalaryDate = paydayInMonth(salaryDay, nextMonthDay)
+  items.push({
+    kind: 'salary',
+    title: 'Зарплата',
+    sub: `за ${monthNameNom(today)} · придёт позже`,
+    date: nextSalaryDate,
+    amount: salaryAmount,
+    received: false,
+  })
+
+  // Смены месяца из skazka: чай уже на руках.
+  const shifts = state.skazka?.monthShifts ?? []
+  for (const s of shifts) {
+    items.push({
+      kind: 'shift',
+      title: 'Смена',
+      sub: 'чаевые',
+      date: s.date,
+      amount: Math.round(s.tips),
+      received: true,
+    })
+  }
+
+  items.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+
+  const received = items.reduce((acc, it) => acc + (it.received ? it.amount : 0), 0)
+  const expected = items.reduce((acc, it) => acc + (it.received ? 0 : it.amount), 0)
+
+  // Отложено в копилку в этом месяце (поступления в копилку по дате).
+  const savedThisMonth = state.transactions.reduce(
+    (acc, t) =>
+      affectsSavings(t) && t.date >= monthStart && t.date <= today
+        ? acc + (t.kind === 'income' ? t.amount : -t.amount)
+        : acc,
+    0
+  )
+
+  const savedShare = received > 0 ? Math.max(0, savedThisMonth) / received : 0
+  const { requiredShare } = calcStrategy(state)
+  const share = Number.isFinite(requiredShare) ? Math.min(1, requiredShare) : 1
+  const topUp = Math.max(0, Math.round(received * share - Math.max(0, savedThisMonth)))
+
+  return {
+    items,
+    received,
+    expected,
+    savedThisMonth,
+    savedShare,
+    topUp,
+    shiftsCount: shifts.length,
+    tipsTotal: state.skazka?.monthTips ?? 0,
+  }
 }
 
 // ───────────────────────── Стратегия накопления ─────────────────────────

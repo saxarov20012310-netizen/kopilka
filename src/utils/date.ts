@@ -71,6 +71,22 @@ export function nextDayOfMonth(day: number, fromISOStr: string): string {
 
 export const monthName = (iso: string): string => MONTHS_GEN[fromISO(iso).getMonth()]
 
+const MONTHS_NOM = [
+  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
+]
+
+/** «июль» — именительный падеж (для «за июль»). */
+export const monthNameNom = (iso: string): string => MONTHS_NOM[fromISO(iso).getMonth()]
+
+const MONTHS_PREP = [
+  'январе', 'феврале', 'марте', 'апреле', 'мае', 'июне',
+  'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре',
+]
+
+/** «июле» — предложный падеж (для «в июле»). */
+export const monthNamePrep = (iso: string): string => MONTHS_PREP[fromISO(iso).getMonth()]
+
 /** Выходной ли день (сб/вс). */
 export function isWeekend(iso: string): boolean {
   const d = fromISO(iso).getDay()
@@ -89,6 +105,16 @@ export function prevBusinessDay(iso: string): string {
  * если день выпадает на выходной — выплата в предыдущий рабочий день (ТК РФ, ст. 136).
  * Если такая дата уже прошла — берём выплату следующего месяца.
  */
+/**
+ * Дата выплаты в месяце заданной даты (кламп к длине месяца,
+ * выходной → предыдущий рабочий день). Может уже быть в прошлом.
+ */
+export function paydayInMonth(day: number, anyDayISO: string): string {
+  const d = fromISO(anyDayISO)
+  const dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  return prevBusinessDay(toISO(new Date(d.getFullYear(), d.getMonth(), Math.min(day, dim))))
+}
+
 export function nextPayday(day: number, fromISOStr: string): string {
   const nominal = nextDayOfMonth(day, fromISOStr)
   const shifted = prevBusinessDay(nominal)

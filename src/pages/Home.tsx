@@ -18,8 +18,6 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
   const upcoming = useMemo(() => calcUpcoming(state), [state])
 
   const deadlineTxt = formatDay(state.goal.deadline)
-  const sharePct = Math.round(Math.min(1, strategy.requiredShare) * 100)
-  const ratePct = Math.round(state.settings.savingRate * 100)
 
   return (
     <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
@@ -35,9 +33,9 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
       </div>
 
       {/* Кольцо прогресса */}
-      <Card className="p-5">
+      <Card className="p-4">
         <div className="flex flex-col items-center">
-          <ProgressRing percent={progress.percent} size={184} stroke={13}>
+          <ProgressRing percent={progress.percent} size={164} stroke={12}>
             <div className="text-[12px] text-muted">Накоплено</div>
             <div className="font-display text-[22px] font-semibold tabular leading-tight text-ink">
               {formatCompact(progress.saved)}
@@ -68,38 +66,22 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
       </Card>
 
       {/* Стратегия: сколько отложить с каждого типа поступления */}
-      <div className="mt-3.5">
+      <div className="rise mt-3.5" style={{ animationDelay: '60ms' }}>
         <SectionTitle>Стратегия до дедлайна</SectionTitle>
         <div className="grid grid-cols-3 gap-2">
           <StatTile label="С зарплаты" value={formatCompact(strategy.perSalary)} hint="₽" />
           <StatTile label="С аванса" value={formatCompact(strategy.perAdvance)} hint="₽" />
           <StatTile label="За смену" value={formatCompact(strategy.perShift)} hint="₽" accent />
         </div>
-        <p
-          className={`mt-2 px-1 text-[12.5px] leading-snug ${
-            strategy.verdict === 'unreal' || strategy.verdict === 'tight'
-              ? 'text-expense'
-              : 'text-muted'
-          }`}
-        >
-          {strategy.verdict === 'done' &&
-            'Цель закрыта — стратегия больше не нужна 🎉'}
-          {strategy.verdict === 'unreal' &&
-            `Даже откладывая всё, к дедлайну не успеть — сдвиньте срок или уменьшите цель.`}
-          {strategy.verdict === 'tight' &&
-            `Нужно ${sharePct}% с каждого поступления — выше вашей нормы ${ratePct}%. Поднимите норму или сдвиньте дедлайн.`}
-          {(strategy.verdict === 'fits' || strategy.verdict === 'easy') &&
-            `Нужно ${sharePct}% с каждого поступления — в пределах вашей нормы ${ratePct}%. Впереди ${strategy.shifts} смен и ${strategy.salaries + strategy.advances} выплат.`}
-        </p>
       </div>
 
-      {/* Мотивация — живая: опережение / в графике / отставание */}
-      <div className="mt-3">
+      {/* Совет: статус + заработано/отложено/нужно */}
+      <div className="rise mt-3" style={{ animationDelay: '120ms' }}>
         <Motivation />
       </div>
 
       {/* Ближайшие поступления */}
-      <div className="mt-4">
+      <div className="rise mt-4" style={{ animationDelay: '180ms' }}>
         <SectionTitle>Ближайшие поступления</SectionTitle>
         <Card className="divide-y divide-line px-4">
           {upcoming.map((e) => (
@@ -127,7 +109,7 @@ export function Home({ onAdd }: { onAdd: (kind: TxKind) => void }) {
       </div>
 
       {/* Быстрые действия */}
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      <div className="rise mt-4 grid grid-cols-2 gap-3" style={{ animationDelay: '240ms' }}>
         <button
           onClick={() => {
             haptic.impact('light')
