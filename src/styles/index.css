@@ -56,13 +56,23 @@ body {
   font-family: 'Onest', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
-  /* Градиентный меш: фиолетовое свечение сверху, бирюзовое снизу */
   background-color: var(--bg);
+}
+
+/* Градиентный меш вынесен в фиксированный слой: рисуется один раз и НЕ
+   перерисовывается при скролле (в отличие от background-attachment: fixed,
+   который на мобильных webview даёт джанк). position: fixed + z-index: -1
+   держит его позади контента, не влияя на layout. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-image:
     radial-gradient(120% 80% at 12% -8%, rgba(123, 97, 255, 0.28), transparent 55%),
     radial-gradient(100% 70% at 96% 4%, rgba(77, 111, 255, 0.2), transparent 50%),
     radial-gradient(120% 90% at 84% 108%, rgba(34, 211, 196, 0.14), transparent 55%);
-  background-attachment: fixed;
 }
 
 a {
