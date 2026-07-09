@@ -54,7 +54,7 @@ export function TabBar({ active, onChange }: { active: TabKey; onChange: (t: Tab
       className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-4"
       style={{ paddingBottom: 'calc(var(--safe-bottom) + 12px)' }}
     >
-      {/* Парящая стеклянная «пилюля» (единственное место с backdrop-blur) */}
+      {/* Парящая стеклянная «пилюля»: плотная полупрозрачная заливка без backdrop-blur (перф) */}
       <div className="glass-nav flex w-full max-w-app items-stretch justify-around gap-1 rounded-pill px-2 py-1.5 shadow-float">
         {TABS.map((t) => {
           const isActive = active === t.key

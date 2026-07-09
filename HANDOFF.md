@@ -8,12 +8,13 @@ Telegram Mini App для накопления денег к цели. Преми
 useTelegram всегда ставит data-theme=dark, BG='#08080f'). Ключевое в `src/styles/index.css`:
 - Токены (в :root и обоих data-theme одинаковые): --bg #08080f, --surface #15152a, --accent #7b61ff
   (электрик-фиолет), --lime/--income #3ddc97 (мятный «денежный», заменил лаймовый), --expense #ff6b8a.
-- Body — градиентный меш: 3 radial-gradient (фиолет сверху-слева, синий сверху-справа, бирюза снизу),
-  background-attachment: fixed.
+- Меш-фон — 3 radial-gradient в фиксированном слое body::before (position: fixed, z-index: -1):
+  рисуется один раз, НЕ перерисовывается на скролле (background-attachment: fixed давал джанк в webview).
 - `.card-hero` — фирменная градиентная карта (--grad-hero фиолет→синий→бирюза + glow + белый текст).
   Единственная градиентная карта (Revolut-паттерн: один герой). На Главной = блок накоплений.
 - `.glass` — карты: полупрозрачная заливка БЕЗ backdrop-blur (блюр на скролле тормозит webview).
-  Card/StatTile/Segmented используют .glass. `.glass-nav` (с блюром) — ТОЛЬКО фиксированный TabBar.
+  Card/StatTile/Segmented используют .glass. `.glass-nav` — TabBar: плотная заливка (0.92) БЕЗ блюра
+  (контент скроллится под фикс-баром → backdrop-blur пересчитывался каждый кадр, issue #3).
 - `.btn-grad` — градиентные CTA (--grad-cta). Активный таб/сегмент/кнопки = btn-grad.
 - tailwind `lime` теперь = var(--lime) (мятный). ВАЖНО: смена tailwind.config требует РЕСТАРТА дев-сервера
   (Vite не подхватывает HMR конфига — text-lime останется старым до рестарта).
