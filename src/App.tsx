@@ -10,7 +10,7 @@ import { Onboarding } from './pages/Onboarding'
 import { AddTransaction } from './pages/AddTransaction'
 import { Celebration } from './components/Celebration'
 import { calcProgress } from './utils/calc'
-import type { TxKind, IncomeSource, ExpenseCategory } from './types/models'
+import type { TxKind, IncomeSource, ExpenseCategory, Transaction } from './types/models'
 
 // Предзаполнение экрана добавления — для «отложить в один тап».
 export interface AddPrefill {
@@ -19,15 +19,21 @@ export interface AddPrefill {
   note?: string
 }
 export type OpenAdd = (kind: TxKind, prefill?: AddPrefill) => void
+export type OpenEdit = (tx: Transaction) => void
 
 export default function App() {
   useTelegramInit()
   const { state, dispatch } = useStore()
   const [tab, setTab] = useState<TabKey>('home')
   const [adding, setAdding] = useState<({ kind: TxKind } & AddPrefill) | null>(null)
+  const [editing, setEditing] = useState<Transaction | null>(null)
 
   const openAdd = useCallback<OpenAdd>((kind, prefill) => setAdding({ kind, ...prefill }), [])
-  const closeAdd = useCallback(() => setAdding(null), [])
+  const openEdit = useCallback<OpenEdit>((tx) => setEditing(tx), [])
+  const closeAdd = useCallback(() => {
+    setAdding(null)
+    setEditing(null)
+  }, [])
 
   // Пересечена ли новая веха прогресса (25/50/75/100%) — тогда празднуем.
   const pct = calcProgress(state).percent
@@ -39,7 +45,10 @@ export default function App() {
     return <Onboarding onDone={() => dispatch({ type: 'SET_ONBOARDED', value: true })} />
   }
 
-  // Экран добавления операции — поверх вкладок, с нативной Back Button.
+  // Экран добавления/редактирования операции — поверх вкладок, с нативной Back Button.
+  if (editing) {
+    return <AddTransaction editTx={editing} onClose={closeAdd} />
+  }
   if (adding) {
     return (
       <AddTransaction
@@ -56,7 +65,7 @@ export default function App() {
     <div className="min-h-screen">
       {tab === 'home' && <Home onAdd={openAdd} />}
       {tab === 'plan' && <Plan />}
-      {tab === 'transactions' && <Transactions onAdd={openAdd} />}
+      {tab === 'transactions' && <Transactions onAdd={openAdd} onEdit={openEdit} />}
       {tab === 'settings' && <Settings />}
       <TabBar active={tab} onChange={setTab} />
       {celebrate && (

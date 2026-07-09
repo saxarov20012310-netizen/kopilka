@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react'
 import { useStore } from '../store/store'
-import { useBackButton, haptic, alertNative, isTelegram } from '../hooks/useTelegram'
+import { useBackButton, haptic, alertNative, confirmNative, isTelegram } from '../hooks/useTelegram'
 import { Segmented } from '../components/Segmented'
-import { parseAmount } from '../utils/format'
+import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDay } from '../utils/date'
 import { CategoryIcon, type IconName } from '../components/icons'
-import type { TxKind, IncomeSource, ExpenseCategory } from '../types/models'
+import type { TxKind, IncomeSource, ExpenseCategory, Transaction } from '../types/models'
 
 const INCOME_SOURCES: { value: IncomeSource; label: string; icon: IconName }[] = [
   { value: 'salary', label: 'Зарплата', icon: 'salary' },
@@ -27,22 +27,28 @@ export function AddTransaction({
   initialAmount,
   initialCategory,
   initialNote,
+  editTx,
   onClose,
 }: {
   initialKind?: TxKind
   initialAmount?: number
   initialCategory?: IncomeSource | ExpenseCategory
   initialNote?: string
+  /** Режим редактирования: исходная операция (id/createdAt/counts сохраняются). */
+  editTx?: Transaction
   onClose: () => void
 }) {
   const { dispatch } = useStore()
-  const [kind, setKind] = useState<TxKind>(initialKind)
-  const [amountRaw, setAmountRaw] = useState(initialAmount ? String(initialAmount) : '')
-  const [category, setCategory] = useState<IncomeSource | ExpenseCategory>(
-    initialCategory ?? (initialKind === 'income' ? 'tips' : 'spending')
+  const editing = !!editTx
+  const [kind, setKind] = useState<TxKind>(editTx?.kind ?? initialKind)
+  const [amountRaw, setAmountRaw] = useState(
+    editTx ? String(editTx.amount) : initialAmount ? String(initialAmount) : ''
   )
-  const [note, setNote] = useState(initialNote ?? '')
-  const [date, setDate] = useState(todayISO())
+  const [category, setCategory] = useState<IncomeSource | ExpenseCategory>(
+    editTx?.category ?? initialCategory ?? (initialKind === 'income' ? 'tips' : 'spending')
+  )
+  const [note, setNote] = useState(editTx?.note ?? initialNote ?? '')
+  const [date, setDate] = useState(editTx?.date ?? todayISO())
   const [touched, setTouched] = useState(false)
 
   const amount = parseAmount(amountRaw)
@@ -57,20 +63,29 @@ export function AddTransaction({
       await alertNative('Введите сумму больше нуля')
       return
     }
-    dispatch({
-      type: 'ADD_TX',
-      tx: {
-        kind,
-        amount,
-        date,
-        category,
-        note: note.trim() || undefined,
-        counts: true,
-      },
-    })
+    if (editTx) {
+      dispatch({
+        type: 'UPDATE_TX',
+        tx: { ...editTx, kind, amount, date, category, note: note.trim() || undefined },
+      })
+    } else {
+      dispatch({
+        type: 'ADD_TX',
+        tx: { kind, amount, date, category, note: note.trim() || undefined, counts: true },
+      })
+    }
     haptic.success()
     onClose()
-  }, [valid, dispatch, kind, amount, date, category, note, onClose])
+  }, [valid, dispatch, editTx, kind, amount, date, category, note, onClose])
+
+  const remove = useCallback(async () => {
+    if (!editTx) return
+    const ok = await confirmNative(`Удалить операцию на ${formatRub(editTx.amount)}?`)
+    if (!ok) return
+    dispatch({ type: 'DELETE_TX', id: editTx.id })
+    haptic.success()
+    onClose()
+  }, [editTx, dispatch, onClose])
 
   useBackButton(true, onClose)
 
@@ -90,7 +105,11 @@ export function AddTransaction({
           </button>
         )}
         <h1 className="text-[19px] font-bold">
-          {kind === 'income' ? 'Добавить поступление' : 'Добавить расход'}
+          {editing
+            ? 'Изменить операцию'
+            : kind === 'income'
+              ? 'Добавить поступление'
+              : 'Добавить расход'}
         </h1>
       </div>
 
@@ -209,8 +228,18 @@ export function AddTransaction({
           valid ? 'btn-grad' : 'glass text-muted'
         }`}
       >
-        Добавить
+        {editing ? 'Сохранить' : 'Добавить'}
       </button>
+
+      {/* Удаление — только в режиме редактирования */}
+      {editing && (
+        <button
+          onClick={remove}
+          className="glass press mt-3 w-full rounded-card py-3 text-[14px] font-semibold text-expense"
+        >
+          Удалить операцию
+        </button>
+      )}
     </div>
   )
 }

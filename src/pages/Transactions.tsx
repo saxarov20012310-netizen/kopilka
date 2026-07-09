@@ -3,19 +3,19 @@ import { useStore } from '../store/store'
 import { TransactionRow } from '../components/TransactionRow'
 import { Card } from '../components/Card'
 import { Segmented } from '../components/Segmented'
-import { confirmNative, haptic } from '../hooks/useTelegram'
+import { haptic } from '../hooks/useTelegram'
 import { formatRub, daysWord } from '../utils/format'
 import { formatDay, todayISO, monthNamePrep, fromISO } from '../utils/date'
 import { affectsSavings, calcMonthEarnings } from '../utils/calc'
 import { CategoryIcon } from '../components/icons'
 import type { Transaction, TxKind } from '../types/models'
-import type { OpenAdd } from '../App'
+import type { OpenAdd, OpenEdit } from '../App'
 
 type Filter = 'all' | TxKind
 type Mode = 'savings' | 'earnings'
 
-export function Transactions({ onAdd }: { onAdd: OpenAdd }) {
-  const { state, dispatch } = useStore()
+export function Transactions({ onAdd, onEdit }: { onAdd: OpenAdd; onEdit: OpenEdit }) {
+  const { state } = useStore()
   const [mode, setMode] = useState<Mode>('savings')
   const [filter, setFilter] = useState<Filter>('all')
 
@@ -28,16 +28,6 @@ export function Transactions({ onAdd }: { onAdd: OpenAdd }) {
 
   const groups = useMemo(() => groupByDate(filtered), [filtered])
   const earnings = useMemo(() => calcMonthEarnings(state), [state])
-
-  const handleDelete = async (tx: Transaction) => {
-    const ok = await confirmNative(
-      `Удалить операцию на ${formatRub(tx.amount)}? Это действие нельзя отменить.`
-    )
-    if (ok) {
-      dispatch({ type: 'DELETE_TX', id: tx.id })
-      haptic.success()
-    }
-  }
 
   if (mode === 'earnings') {
     const mon = monthNamePrep(todayISO())
@@ -202,13 +192,13 @@ export function Transactions({ onAdd }: { onAdd: OpenAdd }) {
               </div>
               <Card className="divide-y divide-line px-4">
                 {g.items.map((tx) => (
-                  <TransactionRow key={tx.id} tx={tx} onClick={() => handleDelete(tx)} />
+                  <TransactionRow key={tx.id} tx={tx} onClick={() => onEdit(tx)} />
                 ))}
               </Card>
             </div>
           ))}
           <p className="px-2 text-center text-xs text-ink-muted">
-            Нажмите на операцию, чтобы удалить её
+            Нажмите на операцию, чтобы изменить или удалить её
           </p>
         </div>
       )}
