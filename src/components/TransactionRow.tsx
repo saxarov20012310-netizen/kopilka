@@ -30,7 +30,7 @@ export function TransactionRow({
       className="press flex w-full items-center gap-3 py-3 text-left"
     >
       <div
-        className={`grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full ${
+        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
           isIncome
             ? 'bg-income/[0.12] text-income'
             : inPiggy
@@ -38,7 +38,7 @@ export function TransactionRow({
               : 'bg-surface2 text-muted'
         }`}
       >
-        <CategoryIcon name={meta.icon} size={19} />
+        <CategoryIcon name={meta.icon} size={17} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[15px] font-semibold text-ink">{tx.note || meta.label}</div>

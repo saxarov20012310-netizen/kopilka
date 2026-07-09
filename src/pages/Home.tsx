@@ -93,8 +93,8 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
               }}
               className="press flex w-full items-center gap-3 px-2 py-3 text-left"
             >
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
-                <CategoryIcon name={e.source} size={19} />
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
+                <CategoryIcon name={e.source} size={17} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-semibold text-ink">{e.title}</div>

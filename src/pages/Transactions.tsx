@@ -111,11 +111,11 @@ export function Transactions({ onAdd }: { onAdd: OpenAdd }) {
             {earnings.items.map((it, i) => (
               <div key={i} className={`flex items-center gap-3 py-3 ${it.received ? '' : 'opacity-60'}`}>
                 <div
-                  className={`grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full ${
+                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
                     it.received ? 'bg-income/[0.12] text-income' : 'bg-surface2 text-muted'
                   }`}
                 >
-                  <CategoryIcon name={it.kind === 'shift' ? 'tips' : it.kind} size={19} />
+                  <CategoryIcon name={it.kind === 'shift' ? 'tips' : it.kind} size={17} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[15px] font-semibold text-ink">{it.title}</div>
@@ -219,8 +219,8 @@ export function Transactions({ onAdd }: { onAdd: OpenAdd }) {
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="mt-16 flex flex-col items-center text-center">
-      <div className="grid h-20 w-20 place-items-center rounded-full bg-accent-soft text-accent">
-        <CategoryIcon name="wallet" size={34} strokeWidth={1.6} />
+      <div className="grid h-14 w-14 place-items-center rounded-full bg-accent-soft text-accent">
+        <CategoryIcon name="wallet" size={26} strokeWidth={1.7} />
       </div>
       <div className="mt-4 text-lg font-bold text-ink">Пока нет операций</div>
       <p className="mt-1 max-w-[260px] text-[15px] text-muted">
