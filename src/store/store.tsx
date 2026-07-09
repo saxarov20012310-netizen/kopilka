@@ -167,10 +167,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     fetchSkazkaSummary(uid).then((s) => {
       if (cancelled || !s) return
       // Обновляем оценку ритма реальными цифрами (если есть смены).
+      // Реальный оклад из skazka (monthBase, без чая) раскладываем на
+      // зарплату (65%) и аванс (35%) — типичная структура (аванс меньше).
       if (s.shifts > 0) {
         dispatch({
           type: 'SET_SETTINGS',
-          settings: { shiftsPerMonth: s.shiftsPerMonth, tipsPerShift: s.avgTips },
+          settings: {
+            shiftsPerMonth: s.shiftsPerMonth,
+            tipsPerShift: s.avgTips,
+            ...(s.monthBase > 0
+              ? {
+                  salaryAmount: Math.round(s.monthBase * 0.65),
+                  advanceAmount: Math.round(s.monthBase * 0.35),
+                }
+              : {}),
+          },
         })
       }
       // Снимок заработка — для экрана «Заработок» и советов.

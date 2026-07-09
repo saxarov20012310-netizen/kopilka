@@ -30,6 +30,10 @@ export interface SkazkaSummary {
   monthShifts: SkazkaShift[]
   /** Сумма чаевых за текущий месяц, ₽. */
   monthTips: number
+  /** Реальный оклад БЕЗ чая за прошлый полный месяц (0 — не было смен). */
+  monthBase: number
+  /** ISO-дата начала месяца, за который посчитан monthBase. */
+  monthBaseFrom: string
 }
 
 export async function fetchSkazkaSummary(telegramId: number): Promise<SkazkaSummary | null> {

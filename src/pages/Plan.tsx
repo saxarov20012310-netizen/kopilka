@@ -6,9 +6,10 @@ import { Card } from '../components/Card'
 import { StatTile } from '../components/StatTile'
 import { formatCompact } from '../utils/format'
 import { formatDay, formatMonthYear } from '../utils/date'
+import { haptic, alertNative } from '../hooks/useTelegram'
 
 export function Plan() {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
   const goal = activeGoal(state)
   const progress = useMemo(() => calcProgress(state), [state])
   const plan = useMemo(() => calcPlan(state), [state])
@@ -17,6 +18,15 @@ export function Plan() {
   const deadlineTxt = formatDay(goal.deadline)
   const ratePct = Math.round(state.settings.savingRate * 100)
   const tight = strategy.verdict === 'tight' || strategy.verdict === 'unreal'
+
+  // Одним тапом сдвинуть дедлайн активной цели до реально достижимого срока.
+  const moveDeadline = async () => {
+    if (!strategy.realisticDate) return
+    haptic.impact('light')
+    dispatch({ type: 'SET_GOAL', goal: { deadline: strategy.realisticDate } })
+    haptic.success()
+    await alertNative(`Срок цели «${goal.title}» сдвинут на ${formatMonthYear(strategy.realisticDate)}.`)
+  }
 
   return (
     <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
@@ -50,6 +60,14 @@ export function Plan() {
             </>
           )}
         </p>
+        {tight && strategy.realisticDate && (
+          <button
+            onClick={moveDeadline}
+            className="btn-grad press mt-3 w-full rounded-pill py-2.5 text-[13.5px] font-semibold"
+          >
+            Сдвинуть срок на {formatMonthYear(strategy.realisticDate)}
+          </button>
+        )}
       </section>
 
       {/* Сколько откладывать с каждого типа поступления */}

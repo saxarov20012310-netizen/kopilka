@@ -45,9 +45,18 @@ export function Settings() {
     }
     setShifts(String(s.shiftsPerMonth))
     setTips(String(s.avgTips))
+    // Реальный оклад из skazka (без чая) → зарплата 65% / аванс 35%.
+    const baseFields =
+      s.monthBase > 0
+        ? { salaryAmount: Math.round(s.monthBase * 0.65), advanceAmount: Math.round(s.monthBase * 0.35) }
+        : {}
+    if (s.monthBase > 0) {
+      setSalaryAmt(String(Math.round(s.monthBase * 0.65)))
+      setAdvanceAmt(String(Math.round(s.monthBase * 0.35)))
+    }
     dispatch({
       type: 'SET_SETTINGS',
-      settings: { shiftsPerMonth: s.shiftsPerMonth, tipsPerShift: s.avgTips },
+      settings: { shiftsPerMonth: s.shiftsPerMonth, tipsPerShift: s.avgTips, ...baseFields },
     })
     dispatch({
       type: 'SET_SKAZKA',
@@ -293,10 +302,11 @@ export function Settings() {
       >
         {syncing ? 'Обновляю из skazka…' : '⟳ Обновить из skazka'}
       </button>
-      <p className="mt-1.5 text-[11px] text-muted">
+      <p className="mt-1.5 text-[11px] leading-snug text-muted">
         {synced
-          ? `skazka: ${synced.shifts} смен за ${synced.days} дн · ≈ ${formatRub(synced.avgTips)}/смена`
-          : 'Смены и чай подтягиваются из skazka автоматически'}
+          ? `skazka: ${synced.shifts} смен · ≈ ${formatRub(synced.avgTips)}/смена` +
+            (synced.monthBase > 0 ? ` · оклад ${formatRub(synced.monthBase)}/мес` : '')
+          : 'Смены, чай и оклад подтягиваются из skazka автоматически'}
       </p>
 
       {/* ── Норма откладывания — фирменная тёмная карта ── */}
