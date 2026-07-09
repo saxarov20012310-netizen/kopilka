@@ -21,6 +21,10 @@ export interface Transaction {
   createdAt: number
   /** id смены из skazka (историческое поле старого автоимпорта — такие операции вычищаются миграцией). */
   skazkaId?: number
+  /** К какой цели относится накопительная операция (income в копилку / «из копилки»).
+   *  Расходы «мимо копилки» — глобальные, без goalId. Старые операции без goalId
+   *  принадлежат первой цели (проставляется миграцией). */
+  goalId?: string
 }
 
 /**
@@ -41,6 +45,8 @@ export interface SkazkaSnapshot {
 }
 
 export interface Goal {
+  /** Уникальный id цели. */
+  id: string
   /** Целевая сумма, ₽. */
   target: number
   /** Дедлайн, ISO-дата. */
@@ -49,6 +55,8 @@ export interface Goal {
   title: string
   /** Дата старта накопления, ISO-дата. */
   startDate: string
+  /** Наибольшая отпразднованная веха этой цели (25/50/75/100%). */
+  celebratedPct: number
 }
 
 export interface Settings {
@@ -69,12 +77,13 @@ export interface Settings {
 }
 
 export interface AppState {
-  goal: Goal
+  /** Список целей (минимум одна). */
+  goals: Goal[]
+  /** id активной цели — её показывают Главная/План/Цель. */
+  activeGoalId: string
   settings: Settings
   transactions: Transaction[]
   onboarded: boolean
   /** Последние данные заработка из skazka (null — ещё не синхронизировались). */
   skazka: SkazkaSnapshot | null
-  /** Наибольшая веха прогресса (25/50/75/100%), которую уже отпраздновали. */
-  celebratedPct: number
 }

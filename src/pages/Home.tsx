@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/store'
 import { calcProgress, calcUpcoming } from '../utils/calc'
+import { activeGoal } from '../utils/storage'
 import { ProgressRing } from '../components/ProgressRing'
 import { Motivation } from '../components/Motivation'
 import { Card } from '../components/Card'
@@ -11,19 +12,40 @@ import { CategoryIcon } from '../components/icons'
 import type { OpenAdd } from '../App'
 
 export function Home({ onAdd }: { onAdd: OpenAdd }) {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
+  const goal = activeGoal(state)
   const progress = useMemo(() => calcProgress(state), [state])
   const upcoming = useMemo(() => calcUpcoming(state), [state])
 
-  const deadlineTxt = formatDay(state.goal.deadline)
+  const deadlineTxt = formatDay(goal.deadline)
 
   return (
     <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
+      {/* Свитчер целей — если целей несколько */}
+      {state.goals.length > 1 && (
+        <div className="no-scrollbar -mx-1 mb-2.5 flex gap-2 overflow-x-auto px-1">
+          {state.goals.map((g) => (
+            <button
+              key={g.id}
+              onClick={() => {
+                if (g.id !== state.activeGoalId) haptic.select()
+                dispatch({ type: 'SET_ACTIVE_GOAL', id: g.id })
+              }}
+              className={`press shrink-0 rounded-pill px-3.5 py-1.5 text-[12.5px] font-semibold ${
+                g.id === state.activeGoalId ? 'btn-grad' : 'glass text-muted'
+              }`}
+            >
+              {g.title}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Заголовок */}
       <div className="mb-3 flex items-center justify-between">
         <div>
           <div className="text-[12.5px] text-ink-muted">Цель накопления</div>
-          <div className="text-[19px] font-bold leading-tight">{state.goal.title}</div>
+          <div className="text-[19px] font-bold leading-tight">{goal.title}</div>
         </div>
         <div className="rounded-pill bg-accent-soft px-3 py-1.5 text-[12.5px] font-semibold text-accent">
           до {deadlineTxt}
@@ -52,7 +74,7 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
               {formatRub(progress.saved)}
             </div>
             <div className="mt-1.5 text-[12.5px] leading-snug text-white/70">
-              из {formatRub(state.goal.target)}
+              из {formatRub(goal.target)}
             </div>
           </div>
         </div>

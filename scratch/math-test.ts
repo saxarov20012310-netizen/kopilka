@@ -4,18 +4,18 @@ import { paydayInMonth } from '../src/utils/date'
 import type { AppState } from '../src/types/models'
 
 const state: AppState = {
-  goal: { title: 'Моя цель', target: 464_000, deadline: '2027-01-18', startDate: '2026-07-01' },
+  goals: [{ id: 'g1', title: 'Моя цель', target: 464_000, deadline: '2027-01-18', startDate: '2026-07-01', celebratedPct: 0 }],
+  activeGoalId: 'g1',
   settings: {
     salaryAmount: 25_000, advanceAmount: 12_000,
     salaryDay: 5, advanceDay: 20, savingRate: 0.4,
     shiftsPerMonth: 18, tipsPerShift: 2_900,
   },
   transactions: [
-    { id: 'a', kind: 'income', amount: 2_000, date: '2026-07-06', category: 'tips', counts: true, createdAt: 1 },
+    { id: 'a', kind: 'income', amount: 2_000, date: '2026-07-06', category: 'tips', counts: true, createdAt: 1, goalId: 'g1' },
     { id: 'b', kind: 'expense', amount: 500, date: '2026-07-07', category: 'spending', counts: true, createdAt: 2 },
   ],
   onboarded: true,
-  celebratedPct: 0,
   skazka: {
     fetchedAt: 0, shiftsPerMonth: 18, avgTips: 2_900,
     monthShifts: [
@@ -78,3 +78,31 @@ assert('realisticDate = today+13мес', s.realisticDate === addMonths(todayISO(
 // цель на грани при норме 40% — вердикт tight (нужно ~83% > 40%)
 assert('вердикт tight', s.verdict === 'tight')
 console.log('\nALL PROJECTION OK ✓')
+
+// ── Миграция и мультицели ──
+import { activeGoal } from '../src/utils/storage'
+import type { Goal } from '../src/types/models'
+// две цели, накопления раздельно по goalId
+const twoGoals: AppState = {
+  ...state,
+  goals: [
+    { id: 'g1', title: 'Мечта', target: 464_000, deadline: '2027-01-18', startDate: '2026-07-01', celebratedPct: 0 },
+    { id: 'g2', title: 'Отпуск', target: 100_000, deadline: '2026-12-01', startDate: '2026-07-01', celebratedPct: 0 },
+  ],
+  activeGoalId: 'g2',
+  transactions: [
+    { id: 't1', kind: 'income', amount: 30_000, date: '2026-07-06', category: 'other', counts: true, createdAt: 1, goalId: 'g1' },
+    { id: 't2', kind: 'income', amount: 12_000, date: '2026-07-06', category: 'other', counts: true, createdAt: 2, goalId: 'g2' },
+  ],
+}
+const pG2 = calcProgress(twoGoals)
+console.log('\n— мультицели: активна Отпуск (g2, цель 100к, отложено 12к) —')
+console.log('  saved:', pG2.saved, '| remaining:', pG2.remaining, '| active:', activeGoal(twoGoals).title)
+assert('копилка g2 = 12000 (не смешивается с g1)', pG2.saved === 12_000)
+assert('remaining g2 = 88000', pG2.remaining === 88_000)
+assert('активна цель Отпуск', activeGoal(twoGoals).title === 'Отпуск')
+// переключение активной на g1 → её копилка 30000
+const onG1 = calcProgress({ ...twoGoals, activeGoalId: 'g1' })
+assert('копилка g1 = 30000', onG1.saved === 30_000)
+console.log('  переключились на g1 → saved:', onG1.saved)
+console.log('\nALL MULTIGOAL OK ✓')

@@ -1,6 +1,7 @@
 // Централизованные расчёты накоплений. Здесь вся математика приложения.
 import type { AppState, Transaction, IncomeSource } from '../types/models'
 import { daysBetween, todayISO, nextPayday, addDays, addMonths, paydayInMonth, monthNameNom } from './date'
+import { activeGoal } from './storage'
 
 export interface Progress {
   saved: number
@@ -22,20 +23,25 @@ export function affectsSavings(t: Transaction): boolean {
   return t.kind === 'income' || t.category === 'goal'
 }
 
-/** Накоплено = поступления − списания «Из копилки». */
-export function calcSaved(transactions: Transaction[]): number {
+/**
+ * Накоплено = поступления − списания «Из копилки».
+ * Если задан goalId — считаем только по этой цели (у каждой цели своя копилка).
+ */
+export function calcSaved(transactions: Transaction[], goalId?: string): number {
   return transactions.reduce((acc, t) => {
     if (!affectsSavings(t)) return acc
+    if (goalId != null && t.goalId !== goalId) return acc
     return acc + (t.kind === 'income' ? t.amount : -t.amount)
   }, 0)
 }
 
 export function calcProgress(state: AppState): Progress {
-  const saved = calcSaved(state.transactions)
-  const target = state.goal.target
+  const goal = activeGoal(state)
+  const saved = calcSaved(state.transactions, goal.id)
+  const target = goal.target
   const remaining = Math.max(0, target - saved)
   const percent = target > 0 ? Math.min(100, (saved / target) * 100) : 0
-  const daysLeft = daysBetween(todayISO(), state.goal.deadline)
+  const daysLeft = daysBetween(todayISO(), goal.deadline)
   return {
     saved,
     remaining,
@@ -77,9 +83,10 @@ export interface PlanDelta {
 /** Положение относительно плана: линейная линия от startDate до дедлайна. */
 export function calcPlanDelta(state: AppState): PlanDelta {
   const { saved, daysLeft, reached, overdue } = calcProgress(state)
-  const target = state.goal.target
-  const start = state.goal.startDate || todayISO()
-  const totalDays = Math.max(1, daysBetween(start, state.goal.deadline))
+  const goal = activeGoal(state)
+  const target = goal.target
+  const start = goal.startDate || todayISO()
+  const totalDays = Math.max(1, daysBetween(start, goal.deadline))
   const elapsed = Math.min(totalDays, Math.max(0, daysBetween(start, todayISO())))
   const expected = (target * elapsed) / totalDays
   const delta = saved - expected
@@ -289,8 +296,9 @@ export function calcStrategy(state: AppState): Strategy {
   const today = todayISO()
 
   const horizon = Math.max(0, daysLeft)
-  const salaries = countPaydays(salaryDay, today, state.goal.deadline)
-  const advances = countPaydays(advanceDay, today, state.goal.deadline)
+  const deadline = activeGoal(state).deadline
+  const salaries = countPaydays(salaryDay, today, deadline)
+  const advances = countPaydays(advanceDay, today, deadline)
   const shifts = Math.round((shiftsPerMonth * horizon) / 30)
 
   const expectedInflow =

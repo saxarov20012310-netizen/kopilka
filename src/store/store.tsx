@@ -29,6 +29,9 @@ type Action =
   | { type: 'UPDATE_TX'; tx: Transaction }
   | { type: 'DELETE_TX'; id: string }
   | { type: 'SET_GOAL'; goal: Partial<Goal> }
+  | { type: 'ADD_GOAL'; goal: Omit<Goal, 'id' | 'celebratedPct'> }
+  | { type: 'SET_ACTIVE_GOAL'; id: string }
+  | { type: 'DELETE_GOAL'; id: string }
   | { type: 'SET_SETTINGS'; settings: Partial<Settings> }
   | { type: 'SET_ONBOARDED'; value: boolean }
   | { type: 'SET_SKAZKA'; snapshot: SkazkaSnapshot }
@@ -38,14 +41,22 @@ type Action =
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case 'ADD_TX':
+    case 'ADD_TX': {
+      // Накопительную операцию (в копилку / «из копилки») привязываем к активной цели.
+      const savings = action.tx.kind === 'income' || action.tx.category === 'goal'
       return {
         ...state,
         transactions: [
-          { ...action.tx, id: newId(), createdAt: Date.now() },
+          {
+            ...action.tx,
+            id: newId(),
+            createdAt: Date.now(),
+            goalId: savings ? state.activeGoalId : undefined,
+          },
           ...state.transactions,
         ],
       }
+    }
     case 'UPDATE_TX':
       return {
         ...state,
@@ -59,7 +70,33 @@ function reducer(state: AppState, action: Action): AppState {
         transactions: state.transactions.filter((t) => t.id !== action.id),
       }
     case 'SET_GOAL':
-      return { ...state, goal: { ...state.goal, ...action.goal } }
+      // Редактируем активную цель.
+      return {
+        ...state,
+        goals: state.goals.map((g) =>
+          g.id === state.activeGoalId ? { ...g, ...action.goal } : g
+        ),
+      }
+    case 'ADD_GOAL': {
+      const goal: Goal = { ...action.goal, id: newId(), celebratedPct: 0 }
+      return { ...state, goals: [...state.goals, goal], activeGoalId: goal.id }
+    }
+    case 'SET_ACTIVE_GOAL':
+      return state.goals.some((g) => g.id === action.id)
+        ? { ...state, activeGoalId: action.id }
+        : state
+    case 'DELETE_GOAL': {
+      // Нельзя удалить последнюю цель. Операции удаляемой цели тоже убираем.
+      if (state.goals.length <= 1) return state
+      const goals = state.goals.filter((g) => g.id !== action.id)
+      const activeGoalId = state.activeGoalId === action.id ? goals[0].id : state.activeGoalId
+      return {
+        ...state,
+        goals,
+        activeGoalId,
+        transactions: state.transactions.filter((t) => t.goalId !== action.id),
+      }
+    }
     case 'SET_SETTINGS':
       return { ...state, settings: { ...state.settings, ...action.settings } }
     case 'SET_ONBOARDED':
@@ -68,7 +105,13 @@ function reducer(state: AppState, action: Action): AppState {
       // Снимок заработка из skazka: смены и чай — отдельно от отложенного.
       return { ...state, skazka: action.snapshot }
     case 'SET_CELEBRATED':
-      return { ...state, celebratedPct: action.pct }
+      // Веха — у активной цели.
+      return {
+        ...state,
+        goals: state.goals.map((g) =>
+          g.id === state.activeGoalId ? { ...g, celebratedPct: action.pct } : g
+        ),
+      }
     case 'HYDRATE':
       return action.state
     case 'RESET':

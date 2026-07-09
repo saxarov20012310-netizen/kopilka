@@ -10,6 +10,7 @@ import { Onboarding } from './pages/Onboarding'
 import { AddTransaction } from './pages/AddTransaction'
 import { Celebration } from './components/Celebration'
 import { calcProgress } from './utils/calc'
+import { activeGoal } from './utils/storage'
 import type { TxKind, IncomeSource, ExpenseCategory, Transaction } from './types/models'
 
 // Предзаполнение экрана добавления — для «отложить в один тап».
@@ -35,10 +36,11 @@ export default function App() {
     setEditing(null)
   }, [])
 
-  // Пересечена ли новая веха прогресса (25/50/75/100%) — тогда празднуем.
+  // Пересечена ли новая веха прогресса (25/50/75/100%) активной цели — празднуем.
   const pct = calcProgress(state).percent
   const reachedTier = useMemo(() => Math.floor(Math.min(100, pct) / 25) * 25, [pct])
-  const celebrate = state.onboarded && reachedTier >= 25 && reachedTier > state.celebratedPct
+  const celebrate =
+    state.onboarded && reachedTier >= 25 && reachedTier > activeGoal(state).celebratedPct
 
   // Онбординг перекрывает всё, пока не пройден.
   if (!state.onboarded) {
@@ -66,7 +68,7 @@ export default function App() {
       {tab === 'home' && <Home onAdd={openAdd} />}
       {tab === 'plan' && <Plan />}
       {tab === 'transactions' && <Transactions onAdd={openAdd} onEdit={openEdit} />}
-      {tab === 'settings' && <Settings />}
+      {tab === 'settings' && <Settings key={state.activeGoalId} />}
       <TabBar active={tab} onChange={setTab} />
       {celebrate && (
         <Celebration

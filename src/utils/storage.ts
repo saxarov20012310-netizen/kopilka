@@ -3,7 +3,7 @@
 //  2) Telegram CloudStorage — облако на стороне Telegram, переживает
 //     переустановку клиента и чистку кэша, синхронизируется между устройствами.
 // Побеждает более свежая копия (по метке updatedAt).
-import type { AppState } from '../types/models'
+import type { AppState, Goal } from '../types/models'
 import type { TelegramCloudStorage } from '../types/telegram'
 import { todayISO } from './date'
 
@@ -15,13 +15,20 @@ const CLOUD_CHUNK = 3800
 const CLOUD_META = 'k2m' // JSON { n: число чанков, t: updatedAt }
 const cloudKey = (i: number) => `k2_${i}`
 
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
+
+const DEFAULT_GOAL: Goal = {
+  id: 'g1',
+  title: 'Моя цель',
+  target: 464_000,
+  deadline: '2027-01-18',
+  startDate: todayISO(),
+  celebratedPct: 0,
+}
+
 export const DEFAULT_STATE: AppState = {
-  goal: {
-    title: 'Моя цель',
-    target: 464_000,
-    deadline: '2027-01-18',
-    startDate: todayISO(),
-  },
+  goals: [DEFAULT_GOAL],
+  activeGoalId: DEFAULT_GOAL.id,
   settings: {
     // Реальная структура дохода: небольшой оклад, основное — чаевые.
     salaryAmount: 25_000,
@@ -35,27 +42,63 @@ export const DEFAULT_STATE: AppState = {
   transactions: [],
   onboarded: false,
   skazka: null,
-  celebratedPct: 0,
 }
 
-const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
+/** Активная цель (или первая как фолбэк, если id не найден). */
+export function activeGoal(state: AppState): Goal {
+  return state.goals.find((g) => g.id === state.activeGoalId) ?? state.goals[0]
+}
 
 export interface Persisted {
   updatedAt: number
   state: AppState
 }
 
-function mergeDefaults(parsed: Partial<AppState>): AppState {
+// Старый формат состояния (одна цель) — для миграции.
+type LegacyState = Partial<AppState> & {
+  goal?: Partial<Goal>
+  celebratedPct?: number
+}
+
+function mergeDefaults(raw: Partial<AppState>): AppState {
+  const parsed = raw as LegacyState
+
+  // Миграция одиночной цели → массив. Старые операции без skazkaId тегируем g1.
+  let goals: Goal[]
+  let activeGoalId: string
+  if (parsed.goals && parsed.goals.length > 0) {
+    goals = parsed.goals.map((g) => ({ ...DEFAULT_GOAL, ...g }))
+    activeGoalId = parsed.activeGoalId ?? goals[0].id
+  } else if (parsed.goal) {
+    const migrated: Goal = {
+      ...DEFAULT_GOAL,
+      ...parsed.goal,
+      id: 'g1',
+      celebratedPct: parsed.celebratedPct ?? 0,
+    }
+    goals = [migrated]
+    activeGoalId = 'g1'
+  } else {
+    goals = [DEFAULT_GOAL]
+    activeGoalId = DEFAULT_GOAL.id
+  }
+
+  const transactions = (parsed.transactions ?? [])
+    // Операции старого автоимпорта смен (skazkaId) — заработок, не отложенное: вычищаем.
+    .filter((t) => t.skazkaId == null)
+    // Накопительным операциям без goalId проставляем первую цель.
+    .map((t) => (t.goalId == null && (t.kind === 'income' || t.category === 'goal')
+      ? { ...t, goalId: goals[0].id }
+      : t))
+
   return {
     ...DEFAULT_STATE,
-    ...parsed,
-    goal: { ...DEFAULT_STATE.goal, ...parsed.goal },
+    goals,
+    activeGoalId,
     settings: { ...DEFAULT_STATE.settings, ...parsed.settings },
-    // Миграция: операции старого автоимпорта смен (skazkaId) были «отложено»,
-    // но пользователь их не откладывал — заработок теперь живёт отдельно.
-    transactions: (parsed.transactions ?? []).filter((t) => t.skazkaId == null),
+    transactions,
+    onboarded: parsed.onboarded ?? false,
     skazka: parsed.skazka ?? null,
-    celebratedPct: parsed.celebratedPct ?? 0,
   }
 }
 
@@ -190,9 +233,11 @@ export function importState(raw: string): AppState | null {
         ? (parsed.state as Partial<AppState>)
         : (parsed as Partial<AppState>)
     if (!candidate || typeof candidate !== 'object') return null
-    // Минимальная валидация: должна быть цель с целевой суммой.
-    if (!candidate.goal || typeof (candidate.goal as { target?: unknown }).target !== 'number')
-      return null
+    // Минимальная валидация: есть цель(и) — новый формат goals[] или старый goal.
+    const c = candidate as LegacyState
+    const hasGoals = Array.isArray(c.goals) && c.goals.length > 0
+    const hasLegacyGoal = typeof c.goal?.target === 'number'
+    if (!hasGoals && !hasLegacyGoal) return null
     return mergeDefaults(candidate)
   } catch {
     return null

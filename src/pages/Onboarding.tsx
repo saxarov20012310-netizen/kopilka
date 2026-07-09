@@ -138,7 +138,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
 
           {i === 0 && (
             <div className="mt-6 rounded-card bg-surface px-5 py-3 text-[15px] shadow-card">
-              Ваша цель: <b className="tabular">{formatRub(state.goal.target)}</b>
+              Ваша цель: <b className="tabular">{formatRub(state.goals[0].target)}</b>
             </div>
           )}
         </div>

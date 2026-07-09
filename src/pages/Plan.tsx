@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/store'
 import { calcPlan, calcProgress, calcStrategy } from '../utils/calc'
+import { activeGoal } from '../utils/storage'
 import { Card } from '../components/Card'
 import { StatTile } from '../components/StatTile'
 import { formatCompact } from '../utils/format'
@@ -8,11 +9,12 @@ import { formatDay, formatMonthYear } from '../utils/date'
 
 export function Plan() {
   const { state } = useStore()
+  const goal = activeGoal(state)
   const progress = useMemo(() => calcProgress(state), [state])
   const plan = useMemo(() => calcPlan(state), [state])
   const strategy = useMemo(() => calcStrategy(state), [state])
 
-  const deadlineTxt = formatDay(state.goal.deadline)
+  const deadlineTxt = formatDay(goal.deadline)
   const ratePct = Math.round(state.settings.savingRate * 100)
   const tight = strategy.verdict === 'tight' || strategy.verdict === 'unreal'
 
@@ -35,12 +37,12 @@ export function Plan() {
           ) : strategy.verdict === 'unreal' ? (
             <>
               К {deadlineTxt} не успеть даже откладывая всё. Реальный срок —{' '}
-              <b className="text-expense">{formatMonthYear(strategy.realisticDate ?? state.goal.deadline)}</b>. Подвинь дедлайн или уменьши сумму во вкладке «Цель».
+              <b className="text-expense">{formatMonthYear(strategy.realisticDate ?? goal.deadline)}</b>. Подвинь дедлайн или уменьши сумму во вкладке «Цель».
             </>
           ) : strategy.verdict === 'tight' ? (
             <>
               При норме {ratePct}% реальный срок —{' '}
-              <b className="text-expense">{formatMonthYear(strategy.realisticDate ?? state.goal.deadline)}</b>, а не {deadlineTxt}. Подними норму или сдвинь срок.
+              <b className="text-expense">{formatMonthYear(strategy.realisticDate ?? goal.deadline)}</b>, а не {deadlineTxt}. Подними норму или сдвинь срок.
             </>
           ) : (
             <>

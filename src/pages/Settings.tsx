@@ -2,15 +2,16 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../store/store'
 import { haptic, confirmNative, alertNative, getTelegramUserId } from '../hooks/useTelegram'
 import { parseAmount, formatRub } from '../utils/format'
-import { todayISO, formatDayYear, daysBetween } from '../utils/date'
-import { exportState, importState } from '../utils/storage'
+import { todayISO, formatDayYear, daysBetween, addMonths } from '../utils/date'
+import { exportState, importState, activeGoal } from '../utils/storage'
 import { fetchSkazkaSummary, type SkazkaSummary } from '../utils/skazka'
 
 export function Settings() {
   const { state, dispatch } = useStore()
-  const [title, setTitle] = useState(state.goal.title)
-  const [target, setTarget] = useState(String(state.goal.target))
-  const [deadline, setDeadline] = useState(state.goal.deadline)
+  const goal = activeGoal(state)
+  const [title, setTitle] = useState(goal.title)
+  const [target, setTarget] = useState(String(goal.target))
+  const [deadline, setDeadline] = useState(goal.deadline)
   const [salaryAmt, setSalaryAmt] = useState(String(state.settings.salaryAmount))
   const [advanceAmt, setAdvanceAmt] = useState(String(state.settings.advanceAmount))
   const [salaryDay, setSalaryDay] = useState(String(state.settings.salaryDay))
@@ -80,9 +81,9 @@ export function Settings() {
   // Есть ли несохранённые изменения — кнопка «Сохранить» видна только при них.
   const dirty = useMemo(
     () =>
-      title.trim() !== state.goal.title ||
-      targetNum !== state.goal.target ||
-      deadline !== state.goal.deadline ||
+      title.trim() !== goal.title ||
+      targetNum !== goal.target ||
+      deadline !== goal.deadline ||
       parseAmount(salaryAmt) !== state.settings.salaryAmount ||
       parseAmount(advanceAmt) !== state.settings.advanceAmount ||
       Number(salaryDay) !== state.settings.salaryDay ||
@@ -131,6 +132,32 @@ export function Settings() {
     }
   }
 
+  // Новая цель: создаём с осмысленными дефолтами и делаем активной (Settings
+  // перемонтируется по key=activeGoalId и покажет её поля для правки).
+  const addGoal = () => {
+    haptic.impact('light')
+    dispatch({
+      type: 'ADD_GOAL',
+      goal: {
+        title: 'Новая цель',
+        target: 100_000,
+        deadline: addMonths(todayISO(), 6),
+        startDate: todayISO(),
+      },
+    })
+  }
+
+  // Удалить активную цель (и её накопления). Последнюю удалить нельзя.
+  const deleteGoal = async () => {
+    if (state.goals.length <= 1) return
+    const ok = await confirmNative(
+      `Удалить цель «${goal.title}» вместе с её накоплениями? Заработок и расходы останутся.`
+    )
+    if (!ok) return
+    dispatch({ type: 'DELETE_GOAL', id: goal.id })
+    haptic.success()
+  }
+
   // Резервная копия: скопировать всё состояние в буфер обмена.
   const backup = async () => {
     const text = exportState(state)
@@ -173,8 +200,34 @@ export function Settings() {
     <div className="page-enter mx-auto max-w-md px-4 pb-24 text-center" style={{ paddingTop: 'calc(var(--safe-top) + 8px)' }}>
       <h1 className="mb-3 text-[19px] font-bold">Цель и настройки</h1>
 
+      {/* ── Переключатель целей + добавить (если целей несколько или чтобы завести вторую) ── */}
+      <div className="no-scrollbar -mx-1 mb-4 flex justify-center gap-2 overflow-x-auto px-1">
+        {state.goals.map((g) => (
+          <button
+            key={g.id}
+            onClick={() => {
+              if (g.id !== state.activeGoalId) {
+                haptic.select()
+                dispatch({ type: 'SET_ACTIVE_GOAL', id: g.id })
+              }
+            }}
+            className={`press shrink-0 rounded-pill px-3.5 py-1.5 text-[12.5px] font-semibold ${
+              g.id === state.activeGoalId ? 'btn-grad' : 'glass text-muted'
+            }`}
+          >
+            {g.title}
+          </button>
+        ))}
+        <button
+          onClick={addGoal}
+          className="glass press shrink-0 rounded-pill px-3 py-1.5 text-[12.5px] font-semibold text-accent"
+        >
+          ＋ Цель
+        </button>
+      </div>
+
       {/* ── Цель — одна карта с внутренними разделителями ── */}
-      <SectionTitle>Цель</SectionTitle>
+      <SectionTitle>{state.goals.length > 1 ? 'Активная цель' : 'Цель'}</SectionTitle>
       <div className="glass overflow-hidden rounded-lg2">
         <Cell label="Название" className="border-b border-line">
           <input
@@ -305,6 +358,16 @@ export function Settings() {
       <p className="mt-1.5 text-[11px] leading-snug text-muted">
         «Копия» кладёт данные в буфер — сохрани в «Избранное» на случай переустановки.
       </p>
+
+      {/* Удалить активную цель — только если целей больше одной */}
+      {state.goals.length > 1 && (
+        <button
+          onClick={deleteGoal}
+          className="glass press mt-4 w-full rounded-card py-3 text-[14px] font-semibold text-expense"
+        >
+          Удалить цель «{goal.title}»
+        </button>
+      )}
     </div>
   )
 }
