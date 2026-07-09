@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store/store'
-import { Card } from '../components/Card'
 import { haptic, confirmNative, alertNative, getTelegramUserId } from '../hooks/useTelegram'
 import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDayYear, daysBetween } from '../utils/date'
@@ -171,91 +170,88 @@ export function Settings() {
   const sliderVal = `${((ratePct - 10) / (80 - 10)) * 100}%`
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-28 text-center" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
-      <h1 className="mb-4 text-[19px] font-bold">Цель и настройки</h1>
+    <div className="page-enter mx-auto max-w-md px-4 pb-24 text-center" style={{ paddingTop: 'calc(var(--safe-top) + 8px)' }}>
+      <h1 className="mb-3 text-[19px] font-bold">Цель и настройки</h1>
 
-      {/* ── Секция: Цель ── */}
+      {/* ── Цель — одна карта с внутренними разделителями ── */}
       <SectionTitle>Цель</SectionTitle>
-      <Card className="px-4 py-3.5">
-        <Field
-          label="Название"
-          value={title}
-          maxLength={40}
-          onChange={setTitle}
-          placeholder="Например, на мечту"
-          bold={false}
-        />
-      </Card>
-      <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-        <Card className="px-3 py-3.5">
-          <NumField
-            label="Сумма, ₽"
-            value={target}
-            onChange={(v) => setTarget(v.replace(/[^\d\s]/g, ''))}
+      <div className="glass overflow-hidden rounded-lg2">
+        <Cell label="Название" className="border-b border-line">
+          <input
+            value={title}
+            maxLength={40}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Например, на мечту"
+            className="w-full bg-transparent text-center text-[15px] font-semibold text-ink outline-none placeholder:text-muted/50"
           />
-        </Card>
-        <Card className="px-3 py-3.5">
-          <Field
-            label="Дедлайн"
-            type="date"
-            value={deadline}
-            min={todayISO()}
-            onChange={(v) => setDeadline(v || deadline)}
-          />
-        </Card>
+        </Cell>
+        <div className="grid grid-cols-2">
+          <Cell label="Сумма, ₽" className="border-r border-line">
+            <CellInput value={target} onChange={(v) => setTarget(v.replace(/[^\d\s]/g, ''))} />
+          </Cell>
+          <Cell label="Дедлайн">
+            <input
+              type="date"
+              value={deadline}
+              min={todayISO()}
+              onChange={(e) => setDeadline(e.target.value || deadline)}
+              className="w-full bg-transparent text-center text-[15px] font-bold tabular text-ink outline-none"
+            />
+          </Cell>
+        </div>
       </div>
-      <p className="mt-2 text-[11.5px] text-muted">
+      <p className="mt-1.5 text-[11.5px] text-muted">
         {targetNum > 0 && daysLeft > 0
           ? `${formatRub(targetNum)} к ${formatDayYear(deadline)} · осталось ${daysLeft} дн.`
           : 'Укажите сумму и дату в будущем'}
       </p>
 
-      {/* ── Секция: Выплаты ── */}
-      <SectionTitle className="mt-6">Выплаты</SectionTitle>
-      <div className="grid grid-cols-2 gap-2.5">
-        <Card className="px-3 py-3.5">
-          <NumField label="Зарплата ≈, ₽" value={salaryAmt} onChange={(v) => setSalaryAmt(v.replace(/[^\d\s]/g, ''))} />
-        </Card>
-        <Card className="px-3 py-3.5">
-          <NumField label="Аванс ≈, ₽" value={advanceAmt} onChange={(v) => setAdvanceAmt(v.replace(/[^\d\s]/g, ''))} />
-        </Card>
-      </div>
-      <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-        <Card className="px-3 py-3.5">
-          <NumField label="День зарплаты" value={salaryDay} onChange={(v) => setSalaryDay(v.replace(/\D/g, '').slice(0, 2))} />
-        </Card>
-        <Card className="px-3 py-3.5">
-          <NumField label="День аванса" value={advanceDay} onChange={(v) => setAdvanceDay(v.replace(/\D/g, '').slice(0, 2))} />
-        </Card>
+      {/* ── Выплаты — 2×2 в одной карте ── */}
+      <SectionTitle className="mt-3">Выплаты</SectionTitle>
+      <div className="glass grid grid-cols-2 overflow-hidden rounded-lg2">
+        <Cell label="Зарплата ≈, ₽" className="border-b border-r border-line">
+          <CellInput value={salaryAmt} onChange={(v) => setSalaryAmt(v.replace(/[^\d\s]/g, ''))} />
+        </Cell>
+        <Cell label="Аванс ≈, ₽" className="border-b border-line">
+          <CellInput value={advanceAmt} onChange={(v) => setAdvanceAmt(v.replace(/[^\d\s]/g, ''))} />
+        </Cell>
+        <Cell label="День зарплаты" className="border-r border-line">
+          <CellInput value={salaryDay} onChange={(v) => setSalaryDay(v.replace(/\D/g, '').slice(0, 2))} />
+        </Cell>
+        <Cell label="День аванса">
+          <CellInput value={advanceDay} onChange={(v) => setAdvanceDay(v.replace(/\D/g, '').slice(0, 2))} />
+        </Cell>
       </div>
 
-      {/* ── Секция: Смены и чаевые (из skazka) ── */}
-      <SectionTitle className="mt-6">Смены и чаевые</SectionTitle>
-      <div className="grid grid-cols-2 gap-2.5">
-        <Card className="px-3 py-3.5">
-          <NumField label="Смен в месяц" value={shifts} onChange={(v) => setShifts(v.replace(/\D/g, '').slice(0, 2))} />
-        </Card>
-        <Card className="px-3 py-3.5">
-          <NumField label="Чаевые ≈, ₽" value={tips} onChange={(v) => setTips(v.replace(/[^\d\s]/g, ''))} />
-        </Card>
+      {/* ── Смены и чаевые (из skazka) ── */}
+      <SectionTitle className="mt-3">Смены и чаевые</SectionTitle>
+      <div className="glass grid grid-cols-2 overflow-hidden rounded-lg2">
+        <Cell label="Смен в месяц" className="border-r border-line">
+          <CellInput value={shifts} onChange={(v) => setShifts(v.replace(/\D/g, '').slice(0, 2))} />
+        </Cell>
+        <Cell label="Чаевые ≈, ₽">
+          <CellInput value={tips} onChange={(v) => setTips(v.replace(/[^\d\s]/g, ''))} />
+        </Cell>
       </div>
       <button
         onClick={syncSkazka}
         disabled={syncing}
-        className="press mt-2.5 w-full rounded-card border border-accent/30 bg-accent-soft py-3 text-[14px] font-semibold text-accent disabled:opacity-60"
+        className="press mt-2.5 w-full rounded-card border border-accent/30 bg-accent-soft py-2.5 text-[13.5px] font-semibold text-accent disabled:opacity-60"
       >
         {syncing ? 'Обновляю из skazka…' : '⟳ Обновить из skazka'}
       </button>
-      <p className="mt-1.5 text-[11.5px] text-muted">
+      <p className="mt-1.5 text-[11px] text-muted">
         {synced
           ? `skazka: ${synced.shifts} смен за ${synced.days} дн · ≈ ${formatRub(synced.avgTips)}/смена`
           : 'Смены и чай подтягиваются из skazka автоматически'}
       </p>
 
       {/* ── Норма откладывания — фирменная тёмная карта ── */}
-      <section className="mt-6 rounded-lg2 bg-inverse p-5">
-        <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#83869E]">Норма откладывания</h3>
-        <div className="mt-1 font-display text-[34px] font-semibold tabular text-lime">{ratePct}%</div>
+      <section className="mt-3 rounded-lg2 bg-inverse px-4 py-3.5">
+        <div className="flex items-baseline justify-between">
+          <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[#83869E]">Норма откладывания</h3>
+          <span className="font-display text-[24px] font-semibold tabular text-lime">{ratePct}%</span>
+        </div>
         <input
           type="range"
           min={10}
@@ -263,16 +259,12 @@ export function Settings() {
           step={5}
           value={ratePct}
           onChange={(e) => setRate(Number(e.target.value) / 100)}
-          className="slider-lime mt-4"
+          className="slider-lime mt-3"
           style={{ '--val': sliderVal } as React.CSSProperties}
         />
-        <div className="mt-2 flex justify-between text-[11.5px] text-[#83869E]">
-          <span>Комфортно</span>
-          <span>Агрессивно</span>
-        </div>
-        <div className="mt-3 border-t border-white/[0.06] pt-3 text-[12.5px] leading-snug text-[#83869E]">
-          Откладываешь ≈ <b className="tabular text-lime">{formatRub(perMonthSaving)}</b> в месяц.
-          <br />Успеешь ли к цели — смотри во вкладке «План».
+        <div className="mt-2 text-[11.5px] leading-snug text-[#83869E]">
+          Откладываешь ≈ <b className="tabular text-lime">{formatRub(perMonthSaving)}</b> в месяц ·
+          успеешь ли — во вкладке «План»
         </div>
       </section>
 
@@ -280,7 +272,7 @@ export function Settings() {
       {dirty && (
         <button
           onClick={save}
-          className={`press mt-5 w-full rounded-card py-3.5 text-[15px] font-semibold ${
+          className={`press mt-4 w-full rounded-card py-3 text-[15px] font-semibold ${
             valid ? 'btn-grad' : 'glass text-muted'
           }`}
         >
@@ -289,31 +281,30 @@ export function Settings() {
       )}
 
       {/* ── Данные ── */}
-      <SectionTitle className="mt-6">Данные</SectionTitle>
-      <div className="grid grid-cols-2 gap-2.5">
+      <SectionTitle className="mt-3">Данные</SectionTitle>
+      <div className="grid grid-cols-3 gap-2">
         <button
           onClick={backup}
-          className="glass press rounded-card py-3 text-[14px] font-semibold text-ink"
+          className="glass press rounded-card py-2.5 text-[12.5px] font-semibold text-ink"
         >
-          Сохранить копию
+          Копия
         </button>
         <button
           onClick={restore}
-          className="glass press rounded-card py-3 text-[14px] font-semibold text-ink"
+          className="glass press rounded-card py-2.5 text-[12.5px] font-semibold text-ink"
         >
           Восстановить
         </button>
+        <button
+          onClick={resetAll}
+          className="glass press rounded-card py-2.5 text-[12.5px] font-semibold text-expense"
+        >
+          Сбросить
+        </button>
       </div>
-      <p className="mt-1.5 text-[11.5px] leading-snug text-muted">
-        Копия — на случай переустановки: скопируй строку и сохрани в «Избранное».
+      <p className="mt-1.5 text-[11px] leading-snug text-muted">
+        «Копия» кладёт данные в буфер — сохрани в «Избранное» на случай переустановки.
       </p>
-
-      <button
-        onClick={resetAll}
-        className="glass press mt-4 w-full rounded-card py-3.5 text-[15px] font-semibold text-expense"
-      >
-        Сбросить операции
-      </button>
     </div>
   )
 }
@@ -321,69 +312,38 @@ export function Settings() {
 // Заголовок секции — по центру.
 function SectionTitle({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <h2 className={`mb-2.5 text-[12px] font-semibold uppercase tracking-wide text-muted ${className}`}>
+    <h2 className={`mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-muted ${className}`}>
       {children}
     </h2>
   )
 }
 
-// Поле-карточка: подпись сверху по центру, значение по центру.
-function Field({
+// Ячейка поля внутри сгруппированной карты: подпись + центрированное значение.
+function Cell({
   label,
-  value,
-  onChange,
-  type = 'text',
-  placeholder,
-  min,
-  maxLength,
-  bold = true,
+  children,
+  className = '',
 }: {
   label: string
-  value: string
-  onChange: (v: string) => void
-  type?: string
-  placeholder?: string
-  min?: string
-  maxLength?: number
-  bold?: boolean
+  children: React.ReactNode
+  className?: string
 }) {
   return (
-    <label className="block">
+    <label className={`block px-3 py-2 text-center ${className}`}>
       <span className="text-[11px] text-muted">{label}</span>
-      <input
-        type={type}
-        value={value}
-        min={min}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className={`mt-1 w-full bg-transparent text-center text-[15px] text-ink outline-none placeholder:text-muted/50 ${
-          bold ? 'font-semibold' : 'font-medium'
-        }`}
-      />
+      <div className="mt-0.5">{children}</div>
     </label>
   )
 }
 
-// Числовое поле-карточка по центру.
-function NumField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-}) {
+// Числовой ввод для ячейки — центрированный, жирный.
+function CellInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <label className="block">
-      <span className="text-[11px] text-muted">{label}</span>
-      <input
-        inputMode="numeric"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full bg-transparent text-center text-[16px] font-bold tabular text-ink outline-none"
-      />
-    </label>
+    <input
+      inputMode="numeric"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-transparent text-center text-[16px] font-bold tabular text-ink outline-none"
+    />
   )
 }
