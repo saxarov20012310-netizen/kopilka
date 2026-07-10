@@ -1,6 +1,6 @@
 // Централизованные расчёты накоплений. Здесь вся математика приложения.
 import type { AppState, Transaction, IncomeSource } from '../types/models'
-import { daysBetween, todayISO, nextPayday, addDays, addMonths, paydayInMonth, monthNameNom } from './date'
+import { daysBetween, todayISO, nextPayday, addDays, addMonths, paydayInMonth, monthNameNom, monthNamePrep, fromISO } from './date'
 import { activeGoal } from './storage'
 
 export interface Progress {
@@ -49,6 +49,69 @@ export function calcProgress(state: AppState): Progress {
     daysLeft,
     overdue: daysLeft < 0,
     reached: saved >= target,
+  }
+}
+
+export interface MonthPace {
+  /** Название месяца в предложном падеже («июле»). */
+  monthName: string
+  /** Ровная месячная норма к активной цели, ₽. */
+  needed: number
+  /** Отложено в активную цель в этом месяце, ₽. */
+  saved: number
+  /** Сколько ещё доложить до нормы месяца, ₽ (0 — норма выполнена). */
+  remaining: number
+  /** Сколько в день/неделю, чтобы добить норму до конца месяца. */
+  perDay: number
+  perWeek: number
+  /** Дней до конца месяца (включая сегодня). */
+  daysLeft: number
+  /** Прогресс к норме месяца, 0..100. */
+  percent: number
+  /** Норма месяца выполнена. */
+  met: boolean
+}
+
+/**
+ * Темп текущего месяца по активной цели: сколько уже отложено против ровной
+ * месячной нормы и сколько нужно откладывать в день/неделю, чтобы добить норму
+ * до конца месяца.
+ */
+export function calcMonthPace(state: AppState): MonthPace {
+  const goal = activeGoal(state)
+  const prog = calcProgress(state)
+  const today = todayISO()
+  const now = fromISO(today)
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const daysLeft = lastDay - now.getDate() + 1
+
+  // Ровная месячная норма: остаток цели, размазанный по месяцам до дедлайна.
+  const needed = prog.reached ? 0 : Math.round((prog.remaining * 30) / Math.max(1, prog.daysLeft))
+
+  // Отложено в этом месяце именно в активную цель.
+  const monthStart = today.slice(0, 8) + '01'
+  const savedRaw = state.transactions.reduce((acc, t) => {
+    if (!affectsSavings(t) || t.goalId !== goal.id) return acc
+    if (t.date < monthStart || t.date > today) return acc
+    return acc + (t.kind === 'income' ? t.amount : -t.amount)
+  }, 0)
+  const saved = Math.max(0, savedRaw)
+
+  const remaining = Math.max(0, needed - saved)
+  const perDay = remaining > 0 ? Math.ceil(remaining / daysLeft) : 0
+  const perWeek = remaining > 0 ? Math.ceil(remaining / Math.max(1, daysLeft / 7)) : 0
+  const percent = needed > 0 ? Math.min(100, (saved / needed) * 100) : 100
+
+  return {
+    monthName: monthNamePrep(today),
+    needed,
+    saved,
+    remaining,
+    perDay,
+    perWeek,
+    daysLeft,
+    percent,
+    met: remaining === 0,
   }
 }
 

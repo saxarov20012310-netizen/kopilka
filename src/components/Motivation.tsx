@@ -1,32 +1,20 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/store'
-import {
-  calcPlanDelta,
-  calcProgress,
-  calcStrategy,
-  calcMonthEarnings,
-  type PlanDelta,
-  type Progress,
-} from '../utils/calc'
+import { calcPlanDelta, calcProgress, type PlanDelta, type Progress } from '../utils/calc'
 import { formatRub } from '../utils/format'
-import { haptic } from '../hooks/useTelegram'
-import type { OpenAdd } from '../App'
 
 /**
- * Карточка «Совет» — коротко и по делу: статус к плану одной фразой +
- * (если отстаёшь) кнопка «Отложить N» в один тап. Без плотных абзацев —
- * подробная разбивка получено/отложено/потрачено живёт в История → Заработок.
+ * Карточка «Совет» — одна фраза о положении относительно плана к цели.
+ * Действие «отложить» и месячный темп живут в карте «Этот месяц» на Главной;
+ * разбивка получено/отложено/потрачено — в История → Заработок.
  */
-export function Motivation({ onAdd }: { onAdd?: OpenAdd }) {
+export function Motivation() {
   const { state } = useStore()
   const progress = useMemo(() => calcProgress(state), [state])
   const pd = useMemo(() => calcPlanDelta(state), [state])
-  const strategy = useMemo(() => calcStrategy(state), [state])
-  const earnings = useMemo(() => calcMonthEarnings(state), [state])
 
   const seed = new Date().getDate() + state.transactions.length
   const headline = pickHeadline(pd, progress, seed)
-  const showTopUp = earnings.topUp > 0 && strategy.verdict !== 'done'
 
   return (
     <div className="rounded-lg2 border border-line bg-surface p-4 shadow-card">
@@ -40,19 +28,6 @@ export function Motivation({ onAdd }: { onAdd?: OpenAdd }) {
       <p className={`mt-2.5 text-[14.5px] font-medium leading-snug ${headline.tone === 'expense' ? 'text-expense' : 'text-ink'}`}>
         {headline.text}
       </p>
-
-      {showTopUp && onAdd && (
-        <button
-          onClick={() => {
-            haptic.impact('light')
-            onAdd('income', { amount: earnings.topUp, category: 'other', note: 'Догоняю план' })
-          }}
-          className="btn-grad press mt-3 flex w-full items-center justify-center gap-1.5 rounded-pill py-2.5 text-[14px] font-semibold"
-        >
-          Отложить {formatRub(earnings.topUp)}
-          <span className="text-[16px] leading-none">+</span>
-        </button>
-      )}
     </div>
   )
 }
@@ -93,7 +68,7 @@ function pickHeadline(
     case 'behind':
       return {
         tone: 'expense',
-        text: `Отстаёшь на ${formatRub(-pd.delta)}. Чтобы догнать — откладывай +${formatRub(pd.catchUpPerDay)} в день.`,
+        text: `Немного отстаёшь от плана — на ${formatRub(-pd.delta)}. Подтяни в этом месяце.`,
       }
     case 'onTrack':
     default:

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/store'
-import { calcProgress, calcUpcoming } from '../utils/calc'
+import { calcProgress, calcUpcoming, calcMonthPace } from '../utils/calc'
 import { activeGoal } from '../utils/storage'
 import { ProgressRing } from '../components/ProgressRing'
 import { Motivation } from '../components/Motivation'
@@ -16,6 +16,7 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
   const goal = activeGoal(state)
   const progress = useMemo(() => calcProgress(state), [state])
   const upcoming = useMemo(() => calcUpcoming(state), [state])
+  const mp = useMemo(() => calcMonthPace(state), [state])
 
   const deadlineTxt = formatDay(goal.deadline)
 
@@ -93,9 +94,55 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
         </div>
       </section>
 
-      {/* Совет: статус + одно действие «Отложить N» */}
-      <div className="rise mt-3.5" style={{ animationDelay: '80ms' }}>
-        <Motivation onAdd={onAdd} />
+      {/* Этот месяц — темп: отложено / норма / сколько ещё в день */}
+      <div className="glass rise mt-3.5 rounded-lg2 p-4" style={{ animationDelay: '50ms' }}>
+        <div className="flex items-center justify-between">
+          <span className="text-[12px] font-semibold uppercase tracking-wide text-muted">
+            В {mp.monthName}
+          </span>
+          <span className="text-[12.5px] font-semibold tabular text-muted">{Math.round(mp.percent)}%</span>
+        </div>
+        <div className="mt-1 flex items-baseline gap-1.5">
+          <span className="font-display text-[22px] font-semibold tabular text-ink">
+            {formatRub(mp.saved)}
+          </span>
+          <span className="text-[12.5px] text-muted">из ≈ {formatRub(mp.needed)}</span>
+        </div>
+        {/* Прогресс-бар месяца */}
+        <div className="mt-2 h-2 overflow-hidden rounded-pill" style={{ background: 'var(--ring-track)' }}>
+          <div
+            className="h-full rounded-pill transition-[width] duration-500"
+            style={{ width: `${mp.percent}%`, background: 'var(--grad-cta)' }}
+          />
+        </div>
+        {mp.met ? (
+          <p className="mt-2 text-[12.5px] font-medium text-income">
+            Норма месяца выполнена — так держать!
+          </p>
+        ) : (
+          <p className="mt-2 text-[12.5px] leading-snug text-muted">
+            Осталось <b className="tabular text-ink">{formatRub(mp.remaining)}</b> — это ≈{' '}
+            <b className="tabular text-accent">{formatRub(mp.perDay)}/день</b> ({mp.daysLeft}{' '}
+            {daysWord(mp.daysLeft)}) или ≈ {formatRub(mp.perWeek)}/нед
+          </p>
+        )}
+        {!mp.met && (
+          <button
+            onClick={() => {
+              haptic.impact('light')
+              onAdd('income', { amount: mp.remaining, category: 'other', note: 'Норма месяца' })
+            }}
+            className="btn-grad press mt-3 flex w-full items-center justify-center gap-1.5 rounded-pill py-2.5 text-[14px] font-semibold"
+          >
+            Отложить {formatRub(mp.remaining)}
+            <span className="text-[16px] leading-none">+</span>
+          </button>
+        )}
+      </div>
+
+      {/* Совет: короткий статус к цели */}
+      <div className="rise mt-3.5" style={{ animationDelay: '110ms' }}>
+        <Motivation />
       </div>
 
       {/* Ближайшие поступления — тап по строке откладывает рекомендованную сумму */}
