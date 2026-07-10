@@ -21,7 +21,7 @@ export function Home({ onAdd }: { onAdd: OpenAdd }) {
   const deadlineTxt = formatDay(goal.deadline)
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
+    <div className="page-enter mx-auto max-w-md px-4 pb-[calc(var(--safe-bottom)+104px)]" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
       {/* Свитчер целей — если целей несколько */}
       {state.goals.length > 1 && (
         <div className="no-scrollbar -mx-1 mb-2.5 flex gap-2 overflow-x-auto px-1">

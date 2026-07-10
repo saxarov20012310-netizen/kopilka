@@ -36,14 +36,27 @@ export interface SkazkaSummary {
   monthBaseFrom: string
 }
 
-export async function fetchSkazkaSummary(telegramId: number): Promise<SkazkaSummary | null> {
+export type SkazkaResult =
+  | { ok: true; data: SkazkaSummary }
+  | { ok: false; reason: string }
+
+/** Полный вызов с причиной ошибки — для ручного синка (показать пользователю). */
+export async function fetchSkazkaResult(telegramId: number): Promise<SkazkaResult> {
   try {
     const r = await fetch(
       `${SKAZKA_URL}/api/kopilka/summary?telegram_id=${telegramId}&key=${KEY}`
     )
-    if (!r.ok) return null
-    return (await r.json()) as SkazkaSummary
-  } catch {
-    return null
+    if (!r.ok) {
+      return { ok: false, reason: `сервер ответил ${r.status}${r.status === 404 ? ' (пользователь не найден в skazka)' : r.status === 401 ? ' (ключ не принят)' : ''}` }
+    }
+    return { ok: true, data: (await r.json()) as SkazkaSummary }
+  } catch (e) {
+    return { ok: false, reason: `сеть недоступна (${e instanceof Error ? e.message : 'ошибка запроса'})` }
   }
+}
+
+/** Упрощённый вызов — для автосинхронизации (data или null). */
+export async function fetchSkazkaSummary(telegramId: number): Promise<SkazkaSummary | null> {
+  const res = await fetchSkazkaResult(telegramId)
+  return res.ok ? res.data : null
 }

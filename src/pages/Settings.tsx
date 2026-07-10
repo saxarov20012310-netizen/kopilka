@@ -4,7 +4,7 @@ import { haptic, confirmNative, alertNative, getTelegramUserId } from '../hooks/
 import { parseAmount, formatRub } from '../utils/format'
 import { todayISO, formatDayYear, daysBetween, addMonths } from '../utils/date'
 import { exportState, importState, activeGoal } from '../utils/storage'
-import { fetchSkazkaSummary, type SkazkaSummary } from '../utils/skazka'
+import { fetchSkazkaResult, type SkazkaSummary } from '../utils/skazka'
 
 export function Settings() {
   const { state, dispatch } = useStore()
@@ -28,17 +28,18 @@ export function Settings() {
   const syncSkazka = async () => {
     const uid = getTelegramUserId()
     if (!uid) {
-      await alertNative('Синхронизация работает только внутри Telegram')
+      await alertNative('Синхронизация работает только внутри Telegram (не удалось определить твой Telegram id).')
       return
     }
     setSyncing(true)
-    const s = await fetchSkazkaSummary(uid)
+    const res = await fetchSkazkaResult(uid)
     setSyncing(false)
-    if (!s) {
+    if (!res.ok) {
       haptic.warning()
-      await alertNative('Не удалось получить данные из skazka. Попробуйте позже.')
+      await alertNative(`Не удалось получить данные из skazka: ${res.reason}.`)
       return
     }
+    const s = res.data
     if (s.shifts === 0) {
       await alertNative('В skazka нет смен за последние 30 дней — нечего подтягивать.')
       return
@@ -206,7 +207,7 @@ export function Settings() {
   const sliderVal = `${((ratePct - 10) / (80 - 10)) * 100}%`
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-24 text-center" style={{ paddingTop: 'calc(var(--safe-top) + 8px)' }}>
+    <div className="page-enter mx-auto max-w-md px-4 pb-[calc(var(--safe-bottom)+104px)] text-center" style={{ paddingTop: 'calc(var(--safe-top) + 8px)' }}>
       <h1 className="mb-3 text-[19px] font-bold">Цель и настройки</h1>
 
       {/* ── Переключатель целей + добавить (если целей несколько или чтобы завести вторую) ── */}

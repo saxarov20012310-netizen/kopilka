@@ -16,8 +16,25 @@ export function isTelegram(): boolean {
 /** Telegram id текущего пользователя (null вне Telegram). */
 export function getTelegramUserId(): number | null {
   const tg = getTG()
-  const user = tg?.initDataUnsafe?.user as { id?: number } | undefined
-  return typeof user?.id === 'number' ? user.id : null
+  if (!tg) return null
+  // 1) Быстрый путь — распарсенный объект.
+  const user = tg.initDataUnsafe?.user as { id?: number } | undefined
+  if (typeof user?.id === 'number') return user.id
+  // 2) Фолбэк — подписанный initData (в части клиентов initDataUnsafe.user пуст).
+  try {
+    const raw = tg.initData
+    if (raw) {
+      const params = new URLSearchParams(raw)
+      const u = params.get('user')
+      if (u) {
+        const id = JSON.parse(u)?.id
+        if (typeof id === 'number') return id
+      }
+    }
+  } catch {
+    /* невалидный initData — вернём null */
+  }
+  return null
 }
 
 // Единый премиум-фон «Aurora» — приложение всегда тёмное, независимо от темы Telegram.

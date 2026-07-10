@@ -29,7 +29,7 @@ export function Plan() {
   }
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
+    <div className="page-enter mx-auto max-w-md px-4 pb-[calc(var(--safe-bottom)+104px)]" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
       <h1 className="mb-3 text-[19px] font-bold">План</h1>
 
       {/* Вердикт достижимости — главная мысль экрана */}

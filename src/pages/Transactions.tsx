@@ -38,7 +38,7 @@ export function Transactions({ onAdd, onEdit }: { onAdd: OpenAdd; onEdit: OpenEd
     const daysLeftInMonth = lastDay - now.getDate() + 1
     const perDayFree = earnings.free > 0 ? Math.floor(earnings.free / daysLeftInMonth) : 0
     return (
-      <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
+      <div className="page-enter mx-auto max-w-md px-4 pb-[calc(var(--safe-bottom)+104px)]" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
         <h1 className="mb-3 text-[19px] font-bold">История</h1>
         <Segmented
           options={[
@@ -124,10 +124,12 @@ export function Transactions({ onAdd, onEdit }: { onAdd: OpenAdd; onEdit: OpenEd
               </div>
             ))}
           </Card>
-          <p className="mt-2 px-2 text-center text-xs text-muted">
+          <p className="mt-2 px-2 text-center text-xs leading-snug text-muted">
             {earnings.shiftsCount > 0
               ? `Смены и чай — из skazka (${earnings.shiftsCount} за месяц). Зарплата 5-го — за прошлый месяц.`
-              : 'Смены подтянутся из skazka автоматически. Зарплата 5-го — за прошлый месяц.'}
+              : state.skazka
+                ? 'В этом месяце смен из skazka пока нет. Зарплата 5-го — за прошлый месяц.'
+                : 'Смены ещё не подтянулись. Открой копилку в Telegram или нажми «Обновить из skazka» во вкладке «Цель».'}
           </p>
         </div>
       </div>
@@ -135,7 +137,7 @@ export function Transactions({ onAdd, onEdit }: { onAdd: OpenAdd; onEdit: OpenEd
   }
 
   return (
-    <div className="page-enter mx-auto max-w-md px-4 pb-28" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
+    <div className="page-enter mx-auto max-w-md px-4 pb-[calc(var(--safe-bottom)+104px)]" style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}>
       <div className="mb-3 flex items-center justify-between">
         <h1 className="text-[19px] font-bold">История</h1>
         <button
