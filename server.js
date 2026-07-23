@@ -11,18 +11,17 @@ const app = express()
 // Сжимаем всё (JS/CSS/HTML) на лету — трафик втрое меньше.
 app.use(compression())
 
-// Статика: ассеты кэшируются, но с ETag — после деплоя обновятся (имена стабильные).
+// Имена бандла стабильные (assets/index.js без хэша — против «белого экрана»
+// от кэша Telegram). Из-за этого нельзя держать max-age: webview кэшировал бы
+// старый бандл и не показывал обновления после деплоя. Ставим no-cache —
+// клиент КАЖДЫЙ раз ревалидирует по ETag: не менялось → 304 (быстро, без
+// перекачки), задеплоили новое → полная отдача. Всегда свежая версия.
 app.use(
   express.static(dist, {
     etag: true,
     lastModified: true,
-    setHeaders(res, filePath) {
-      if (filePath.endsWith('index.html')) {
-        res.setHeader('Cache-Control', 'no-cache')
-      } else {
-        // Ассеты можно держать в кэше час; ETag всё равно проверит свежесть.
-        res.setHeader('Cache-Control', 'public, max-age=3600')
-      }
+    setHeaders(res) {
+      res.setHeader('Cache-Control', 'no-cache')
     },
   })
 )
